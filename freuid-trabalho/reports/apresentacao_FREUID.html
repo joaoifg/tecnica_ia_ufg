@@ -150,7 +150,7 @@
 
   /* ---------- tabela tipo DataFrame ---------- */
   table.df { border-collapse: collapse; width: 100%; font-family: Consolas, "Courier New", monospace; font-size: 15px; }
-  table.df th, table.df td { padding: 8px 12px; border-bottom: 1px solid var(--line); text-align: left; }
+  table.df th, table.df td { padding: 6px 12px; border-bottom: 1px solid var(--line); text-align: left; }
   table.df th { background: #e9eef4; color: var(--navy); font-size: 14px; }
   table.df .x { background: var(--legit-soft); }
   table.df th.x { background: var(--legit); color: #fff; }
@@ -205,6 +205,10 @@
   .concl ul { margin: 6px 0 0; padding-left: 18px; }
   .concl li { font-size: 16px; line-height: 1.4; margin-bottom: 7px; }
 
+  .aula { position: relative; border: 1px solid var(--line); border-radius: 10px; background: #fff; padding: 10px; }
+  .aula img { display: block; width: 100%; height: auto; }
+  .aula .tag { position: absolute; top: -11px; left: 12px; background: var(--navy); color: #fff; font-size: 11.5px; font-weight: 700; letter-spacing: .04em; padding: 3px 10px; border-radius: 999px; }
+  .aula .src { font-size: 11.5px; color: var(--muted); margin-top: 6px; }
   .hint { position: fixed; right: 14px; bottom: 10px; color: rgba(255,255,255,.4); font-size: 12px; font-family: "Segoe UI", sans-serif; }
 
   @media print {
@@ -469,6 +473,11 @@
       <tr><td class="idx">4</td><td>033102</td><td class="x">train/033102.jpeg</td><td class="y">1</td><td>True</td><td>MAURITIUS/ID</td></tr>
     </table>
     <p class="cap">Mesmas colunas do train_labels.csv. As linhas são exemplos do formato. A licença não permite mostrar as imagens do dataset.</p>
+    <div class="aula" style="margin-top:18px;padding:14px 16px 8px">
+      <span class="tag">COMO VIMOS NA AULA 5</span>
+      <img src="aula/aula5_fluxo_supervisionado.png" alt="Fluxo do aprendizado supervisionado da Aula 5: carregar dados (X, y), train-test split, ajustar modelo (fit), predição (predict), avaliar métricas" style="max-width:820px;margin:0 auto" />
+      <div class="src" style="text-align:center">O FREUID segue o mesmo fluxo: (X, y) → split → fit → predict → métricas · Fonte: Aula 05, Prof. Paulo Victor dos Santos</div>
+    </div>
     <div class="take">É <b>classificação binária supervisionada</b>: no treino o modelo vê a foto e a resposta certa. No teste ele só vê a foto e precisa responder 0 ou 1.</div>
   </div>
 </section>
@@ -519,16 +528,22 @@
     <div class="g2">
       <div>
         <div style="font-weight:700;color:var(--navy);font-size:17px;text-align:center">CLASSIFICAÇÃO · pergunta: <span style="color:var(--fraud)">qual classe?</span></div>
-        <svg id="plotCls" viewBox="0 0 500 300" width="100%" role="img" aria-label="Gráfico ilustrativo de classificação com fronteira de decisão separando legítimo e fraude"></svg>
-        <p class="cap" style="text-align:center">Saída: rótulo discreto (legítimo / fraude). Métricas: acurácia, precisão, revocação.</p>
+        <div class="aula" style="margin-top:16px">
+          <span class="tag">AULA 6</span>
+          <img src="aula/aula6_cinco_fronteiras.png" alt="Figura da Aula 6: fronteiras de decisão de k-NN, regressão logística, árvore, SVM e Naive Bayes no dataset Iris" />
+          <div class="src">Saída: uma <b>classe</b>. Cada algoritmo desenha sua fronteira. Usamos a <b>logística</b> e a <b>árvore</b> (dentro da floresta).</div>
+        </div>
       </div>
       <div>
         <div style="font-weight:700;color:var(--navy);font-size:17px;text-align:center">REGRESSÃO · pergunta: <span style="color:var(--rf)">qual valor?</span></div>
-        <svg id="plotReg" viewBox="0 0 500 300" width="100%" role="img" aria-label="Gráfico ilustrativo de regressão com reta de valor previsto"></svg>
-        <p class="cap" style="text-align:center">Saída: número contínuo (ex.: preço de uma casa). Métricas: MAE, MSE, RMSE, R².</p>
+        <div class="aula" style="margin-top:16px">
+          <span class="tag">AULA 5</span>
+          <img src="aula/aula5_reta_regressao.png" alt="Figura da Aula 5: regressão linear prevendo a largura da pétala a partir do comprimento" style="max-width:420px;margin:0 auto" />
+          <div class="src">Saída: um <b>número contínuo</b>. Métricas: MAE, MSE, RMSE, R².</div>
+        </div>
       </div>
     </div>
-    <div class="take">No FREUID, o Y só vale <b>0 ou 1</b>. Então o problema é de <b>classificação</b>, e a avaliação usa a <b>matriz de confusão</b>, não o MAE. <span style="color:var(--muted);font-size:13.5px">(gráficos ilustrativos, no formato da aula)</span></div>
+    <div class="take">No FREUID, o Y só vale <b>0 ou 1</b>. Então o problema é de <b>classificação</b>, e a avaliação usa a <b>matriz de confusão</b>, não o MAE. <span style="color:var(--muted);font-size:13.5px">(figuras das Aulas 5 e 6, Prof. Paulo Victor dos Santos)</span></div>
   </div>
 </section>
 
@@ -572,11 +587,13 @@
       </div>
       <div class="card" style="background:#fff;border-top:5px solid var(--rf)">
         <h3 style="color:var(--rf);font-size:20px">Random Forest</h3>
-        <svg viewBox="0 0 460 190" width="100%" role="img" aria-label="Três árvores votando e a maioria decide fraude">
-          <g id="trees"></g>
-          <rect x="150" y="150" width="160" height="34" rx="8" fill="#f8dcd8" stroke="#c0473b" stroke-width="2"/>
-          <text x="230" y="172" text-anchor="middle" font-size="15" font-weight="700" fill="#c0473b">maioria: FRAUDE</text>
-        </svg>
+        <div class="aula" style="margin:14px 0 8px;padding:8px">
+          <span class="tag">AULA 6 · UMA ÁRVORE</span>
+          <img src="aula/aula6_arvore_decisao.png" alt="Figura da Aula 6: árvore de decisão com perguntas sobre a pétala" style="max-height:140px;width:auto;margin:0 auto" />
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;font-size:14.5px;font-weight:700;color:var(--navy);margin-bottom:8px">
+          <span>árvore × 300</span><span style="color:var(--gold)">→</span><span>cada uma vota</span><span style="color:var(--gold)">→</span><span class="pill p-fraud" style="font-size:13.5px">maioria decide</span>
+        </div>
         <p>Cada <b>árvore</b> faz perguntas do tipo "o gradiente passa de tal valor?". São <b>300 árvores</b>, e a classe final é a que recebe mais votos.</p>
         <p style="margin-top:8px;font-size:13.5px;color:var(--muted)">300 árvores · profundidade até 20 · sem scaler</p>
       </div>
@@ -761,6 +778,7 @@ function axes(svg, X0, Y0, X1, Y1, xl, yl) {
 /* Classificação: duas nuvens e a fronteira */
 (function () {
   const svg = document.getElementById("plotCls");
+  if (!svg) return;
   const X0 = 40, Y0 = 10, X1 = 490, Y1 = 262, W = X1 - X0, H = Y1 - Y0;
   const bx = t => 0.36 + 0.26 * t + 0.05 * Math.sin(t * 7);   // fronteira: x em função de y (0 em cima, 1 embaixo)
   let left = `M${X0},${Y0}`, line = "";
@@ -790,6 +808,7 @@ function axes(svg, X0, Y0, X1, Y1, xl, yl) {
 /* Regressão: nuvem e reta */
 (function () {
   const svg = document.getElementById("plotReg");
+  if (!svg) return;
   const X0 = 40, Y0 = 10, X1 = 490, Y1 = 262, W = X1 - X0, H = Y1 - Y0;
   el(svg, "rect", { x: X0, y: Y0, width: W, height: H, fill: "#fafbfd" });
   for (let i = 0; i < 130; i++) {
@@ -830,6 +849,7 @@ function axes(svg, X0, Y0, X1, Y1, xl, yl) {
 /* Três árvores votando */
 (function () {
   const g = document.getElementById("trees");
+  if (!g) return;
   const votes = ["fraude", "legítimo", "fraude"];
   [70, 230, 390].forEach((cx, k) => {
     const c = "#0d3b66";
