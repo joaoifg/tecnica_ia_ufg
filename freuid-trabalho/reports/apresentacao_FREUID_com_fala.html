@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FREUID · Técnicas de IA I · João Henrique Gomes Dias</title>
+<style>
+  :root {
+    --navy: #0d3b66;
+    --navy2: #164e82;
+    --gold: #c4a046;
+    --ink: #1c2833;
+    --muted: #4d5c6b;
+    --line: #d5dde6;
+    --paper: #ffffff;
+    --soft: #f4f7fb;
+    --green: #1f7a4d;
+    --red: #a33b3b;
+    --amber: #9a6b12;
+    --blue: #2c6eaf;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #e8eef4; color: var(--ink);
+    font-family: Calibri, "Segoe UI", sans-serif; }
+  aside {
+    position: fixed; inset: 0 auto 0 0; width: 198px; background: var(--navy); color: #fff;
+    padding: 18px 14px 56px; z-index: 3;
+  }
+  aside .tag { margin: 0 0 14px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--gold); font-weight: 700; }
+  aside button {
+    display: block; width: 100%; text-align: left; background: transparent; color: rgba(255,255,255,.72);
+    border: 0; border-left: 3px solid transparent; padding: 8px 8px; margin: 0 0 2px;
+    font: inherit; font-size: 13.5px; line-height: 1.25; cursor: pointer;
+  }
+  aside button.on { color: #fff; font-weight: 700; border-left-color: var(--gold); background: rgba(255,255,255,.08); }
+  section.slide {
+    display: none; min-height: 100vh; margin-left: 198px; background: var(--paper);
+    padding: 22px 32px 64px 28px; flex-direction: column; overflow: auto;
+  }
+  section.slide.active { display: flex; }
+  h1 { margin: 0 0 4px; color: var(--navy); font-size: 26px; font-weight: 700; line-height: 1.15; letter-spacing: 0; }
+  h1.cover { font-size: 28px; max-width: 22em; }
+  .banner { width: 100%; height: auto; max-height: none; object-fit: contain; object-position: center; border-radius: 8px; display: block; border: 0; background: #071833; }
+  .hero { display: grid; grid-template-columns: 1.2fr .95fr; gap: 16px; align-items: start; }
+  .poster { display: block; background: #071833; border-radius: 14px; padding: 8px; box-shadow: 0 14px 32px rgba(7, 24, 51, .28); }
+  .scenes { display: grid; gap: 8px; margin-top: 8px; }
+  .scene { background: var(--soft); border-left: 4px solid var(--gold); border-radius: 8px; padding: 8px 10px; }
+  .scene strong { display: block; color: var(--navy); font-size: 14px; margin-bottom: 2px; }
+  .scene span { display: block; font-size: 13.5px; line-height: 1.35; }
+  .banner.sm { max-height: 168px; }
+  .fala { background: #fff8e8; border-left: 4px solid var(--gold); padding: 8px 12px; margin: 8px 0; font-size: 15.5px; line-height: 1.4; }
+  .explica { font-size: 16px; line-height: 1.45; margin: 6px 0 8px; }
+  .versao { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--gold); font-weight: 700; margin: 0 0 4px; }
+  a { color: var(--navy2); }
+  .links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .links a { background: var(--navy); color: #fff; text-decoration: none; border-radius: 999px; padding: 6px 12px; font-size: 14px; font-weight: 700; }
+  table.df { font-family: Consolas, "Courier New", monospace; font-size: 14px; margin-top: 4px; }
+  table.df th { font-size: 13px; }
+  table.df td { font-size: 14px; }
+  table.df .idx { color: #8aa; width: 36px; background: #eef3f8; }
+  table.df th.x, table.df td.x { background: #e7f0fa; }
+  table.df th.y, table.df td.y { background: #e5f6ec; font-weight: 700; }
+  table.df th.x { background: #164e82; }
+  table.df th.y { background: #1f7a4d; }
+  .legend { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .legend span { border-radius: 999px; padding: 4px 10px; font-size: 13px; border: 1px solid var(--line); }
+  .rule { height: 3px; width: 72px; background: var(--gold); margin: 8px 0 14px; }
+  .sub { margin: 0 0 8px; color: var(--muted); font-size: 16px; }
+  ul { margin: 6px 0 0; padding-left: 1.15rem; }
+  li { margin: 0 0 6px; font-size: 16.5px; line-height: 1.35; }
+  li b { color: var(--navy); }
+  .grid2 { display: grid; grid-template-columns: 1.05fr .95fr; gap: 18px; align-items: center; margin-top: 6px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 8px; }
+  .box { background: var(--soft); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+  .box h3 { margin: 0 0 6px; color: var(--navy); font-size: 16px; }
+  .box p, .box li { margin: 0; font-size: 15px; color: var(--ink); line-height: 1.35; }
+  .box ul { margin-top: 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 15.5px; margin-top: 8px; }
+  th { background: var(--navy); color: #fff; text-align: left; padding: 7px 10px; font-weight: 650; }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:nth-child(even) td { background: var(--soft); }
+  .formula { font-family: Cambria, Georgia, serif; font-size: 28px; color: var(--navy); margin: 4px 0 10px; }
+  .cap { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+  .foot {
+    position: fixed; left: 198px; right: 0; bottom: 0; height: 36px; display: flex; align-items: center;
+    justify-content: space-between; padding: 0 28px; background: #fff; border-top: 1px solid var(--line);
+    color: var(--muted); font-size: 13px; z-index: 4;
+  }
+  .foot b { color: var(--navy); }
+  .flow { display: grid; grid-template-columns: 1fr 28px 1fr 28px 1fr 28px 1fr; gap: 6px; align-items: stretch; margin-top: 12px; }
+  .flow .step { background: var(--soft); border: 1px solid var(--line); border-top: 4px solid var(--navy); border-radius: 8px; padding: 12px; }
+  .flow .step strong { display: block; color: var(--navy); margin-bottom: 4px; }
+  .flow .arr { display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 22px; font-weight: 700; }
+  .cm { width: 100%; border-collapse: collapse; text-align: center; }
+  .cm th, .cm td { text-align: center; }
+  .cm .vp { background: #d9f0e3; font-weight: 700; }
+  .cm .vn { background: #d9f0e3; font-weight: 700; }
+  .cm .fp { background: #f8ecd0; font-weight: 700; }
+  .cm .fn { background: #f8d6d6; font-weight: 700; }
+  .cm .n { font-family: Cambria, Georgia, serif; font-size: 26px; display: block; color: var(--navy); }
+  .bars { display: grid; gap: 10px; margin-top: 8px; }
+  .barline { display: grid; grid-template-columns: 92px 1fr 52px; gap: 8px; align-items: center; font-size: 14px; }
+  .track { height: 16px; background: #e6edf4; border-radius: 3px; overflow: hidden; }
+  .track i { display: block; height: 100%; }
+  .lg { color: var(--blue); } .rf { color: #b86e00; }
+  svg.fig { width: 100%; height: auto; background: #fff; border: 1px solid var(--line); border-radius: 8px; }
+  .sum { list-style: none; padding: 0; margin: 8px 0 0; }
+  .sum li { display: grid; grid-template-columns: 36px 1fr; gap: 10px; align-items: start; font-size: 20px; margin-bottom: 12px; }
+  .sum .num { width: 36px; height: 36px; border-radius: 50%; background: var(--navy); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 16px; }
+  .twofig { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .mini5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 8px; }
+  .mini5 figure { margin: 0; }
+  .mini5 figcaption { font-size: 12px; color: var(--navy); font-weight: 700; margin-bottom: 4px; }
+  @media print {
+    aside, .foot { display: none; }
+    section.slide { display: flex !important; margin: 0; page-break-after: always; min-height: 100vh; }
+    html, body { background: #fff; }
+  }
+  @media (max-width: 980px) {
+    aside { display: none; }
+    section.slide, .foot { margin-left: 0; left: 0; }
+    .grid2, .twofig, .flow, .mini5, .hero { grid-template-columns: 1fr; }
+    .flow .arr { transform: rotate(90deg); }
+  }
+</style>
+</head>
+<body>
+<aside>
+  <p class="tag">IIG0029 · Aula 06</p>
+  <button type="button" data-sec="problema">Problema</button>
+  <button type="button" data-sec="dataset">Dataset e fluxo</button>
+  <button type="button" data-sec="classificacao">Classificação</button>
+  <button type="button" data-sec="regressao">Regressão</button>
+  <button type="button" data-sec="metricas">Métricas</button>
+  <button type="button" data-sec="resultado">Resultado</button>
+</aside>
+
+<!-- 1 -->
+<section class="slide active" data-sec="problema">
+  <p class="versao">Versão com a fala · esta é a que eu abro para apresentar</p>
+  <p class="sub">Trabalho final · João Henrique Gomes Dias · UFG / IIG · IIG0029</p>
+  <h1 class="cover">Uma competição de IA. Um problema de balcão.</h1>
+  <div class="rule"></div>
+  <div class="hero">
+    <a class="poster" href="https://freuid2026.microblink.com/" target="_blank" rel="noopener">
+      <img class="banner" src="freuid_banner.png" alt="Cartaz completo do FREUID Challenge: primeira competição de fraude em documentos de identidade, IJCAI-ECAI 2026, Bremen, com a carteirinha fictícia da República de Freuid" />
+    </a>
+    <div>
+      <p class="explica">Isto foi uma competição internacional: o FREUID Challenge, no congresso IJCAI-ECAI 2026, em Bremen, de 15 a 21 de agosto. Equipes do mundo inteiro treinaram uma IA para olhar a foto de um documento e dizer se ele é legítimo ou fraude. A carteirinha do cartaz é de um país que não existe, a República de Freuid. O sobrenome é SURNAME. Ninguém da figura é real.</p>
+      <p class="explica">O mesmo gesto acontece no serviço público. Antes de abrir um cadastro, alguém confere um documento. Se a IA generativa consegue desenhar um papel falso, o servidor precisa de um aviso antes de carimbar. O modelo deste trabalho não substitui essa pessoa. Ele aponta o risco.</p>
+      <div class="scenes">
+        <div class="scene"><strong>Conselho profissional</strong><span>O registro começa com a carteira de quem pede a habilitação. Um documento editado vira um profissional que não existe.</span></div>
+        <div class="scene"><strong>Benefício</strong><span>A prova de identidade decide quem recebe o direito. Fraude aqui desvia o recurso de quem precisa.</span></div>
+        <div class="scene"><strong>Concurso</strong><span>A inscrição pede o documento da pessoa. A conferência é a primeira porta do certame.</span></div>
+      </div>
+      <p class="fala"><b>O que eu falo:</b> isto aqui foi uma competição de verdade, o FREUID, no congresso de IA em Bremen, em agosto de 2026. O mundo inteiro tentou ensinar a máquina a descobrir documento falso. A carteirinha do cartaz é de um país inventado. Eu trago isso para a gestão pública porque conselho, benefício e concurso fazem a mesma pergunta no balcão: esse papel é de quem diz ser? A IA não carimba. Ela avisa o servidor.</p>
+      <div class="links">
+        <a href="https://freuid2026.microblink.com/" target="_blank" rel="noopener">Site oficial da competição</a>
+        <a href="https://www.kaggle.com/competitions/the-freuid-challenge-2026-ijcai-ecai" target="_blank" rel="noopener">Dataset no Kaggle</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-sec="problema">
+  <h1>Sumário</h1>
+  <div class="rule"></div>
+  <p class="fala"><b>O que eu falo:</b> eu organizei a fala na ordem da Aula 06. Primeiro mostro o problema e o dataset do cartaz. Depois explico classificação, que é o que eu treinei. Em seguida mostro regressão, para o professor ver que eu sei a diferença: regressão prevê número, e o meu Y é sim ou não. No fim leio a matriz e o resultado das 544 imagens.</p>
+  <ol class="sum">
+    <li><span class="num">1</span><span><b>Problema e dataset.</b> O cadastro público precisa saber se o documento é verdadeiro. O arquivo traz a foto (X) e a resposta já marcada (Y).</span></li>
+    <li><span class="num">2</span><span><b>Classificação.</b> A cerca que separa as classes, a regressão logística (reta + probabilidade) e a Random Forest (várias árvores votando).</span></li>
+    <li><span class="num">3</span><span><b>Regressão.</b> Serve quando a resposta é um número, como um preço. Aqui a resposta é uma classe, por isso o resultado medido não é uma reta.</span></li>
+    <li><span class="num">4</span><span><b>Métricas.</b> A matriz mostra o tipo do erro. Acurácia, precisão, revocação e F1 leem essa matriz em perguntas diferentes.</span></li>
+    <li><span class="num">5</span><span><b>Resultado.</b> Nas 109 CNHs do Egito os dois modelos ficam acima do acaso. Nas 41 de Moçambique o corte de 0,5 desanda.</span></li>
+  </ol>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-sec="problema">
+  <h1>O problema na administração pública</h1>
+  <div class="rule"></div>
+  <p class="fala"><b>O que eu falo:</b> pense num conselho profissional, num benefício ou num concurso. A pessoa manda a foto do documento. Se o papel for falso e o sistema aceitar, a fraude entra no cadastro. Se o papel for verdadeiro e o sistema barrar, o cidadão tem que voltar. A IA não decide sozinha. Ela dá um risco, de 0 a 1, e uma pessoa confere. A pergunta é a mesma da aula: é fraude? sim ou não.</p>
+  <p class="explica">O modelo responde uma pergunta só: este documento é fraude? Há dois erros possíveis, e eles não doem igual. Aceitar um falso deixa a fraude entrar no cadastro do conselho, do benefício ou do concurso. Recusar um verdadeiro obriga o cidadão a voltar e explicar. A saída da IA é um número entre 0 e 1, a chance de fraude. Quem decide o corte e quem libera o cadastro continua sendo uma pessoa.</p>
+  <ul>
+    <li>Conselho, benefício e concurso conferem um documento antes de abrir o cadastro.</li>
+    <li>A pergunta do modelo é a da aula: <b>fraude ou não fraude</b>.</li>
+    <li>Aceitar um documento fraudado deixa a fraude entrar no sistema.</li>
+    <li>Recusar um documento legítimo devolve o cidadão para uma nova análise.</li>
+    <li>A IA devolve um risco. A decisão final continua com o servidor.</li>
+  </ul>
+  <div class="grid3">
+    <div class="box"><h3>Classe 0 · legítimo</h3><p>Durante o treino o CSV já diz que este documento é verdadeiro. O modelo aprende o visual desses exemplos.</p></div>
+    <div class="box"><h3>Classe 1 · fraude</h3><p>O CSV já diz que este é ataque: edição, IA generativa ou foto de um papel impresso.</p></div>
+    <div class="box"><h3>Supervisionada e binária</h3><p>Supervisionada: a resposta Y existe no treino. Binária: só há duas respostas, 0 ou 1.</p></div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-sec="dataset">
+  <h1>O dataset serve para IA</h1>
+  <div class="rule"></div>
+  <p class="fala"><b>O que eu falo, apontando a tabela:</b> cada linha é um documento. A coluna azul, <b>image_path</b>, é o caminho da foto: dali sai o X. A coluna verde, <b>label</b>, é o Y da aula: 0 é legítimo, 1 é fraude. <b>is_digital</b> diz se a fraude é só digital ou se alguém imprimiu e fotografou de novo. <b>type</b> é o país e o tipo, por exemplo EGYPT/DL, carteira do Egito. Essas duas últimas não são a resposta. O arquivo real tem 69.352 linhas. Esta grade é uma simulação das primeiras linhas, no formato do CSV, para eu explicar. Eu treinei em 544.</p>
+  <p class="cap" style="margin-bottom:6px">Simulação de <b>train_labels.csv</b> · colunas reais do desafio · linhas de exemplo, não um recorte do arquivo</p>
+  <table class="df">
+    <tr>
+      <th class="idx"></th>
+      <th>id</th>
+      <th class="x">image_path · X</th>
+      <th class="y">label · Y</th>
+      <th>is_digital</th>
+      <th>type</th>
+    </tr>
+    <tr>
+      <td class="idx">0</td>
+      <td>000184</td>
+      <td class="x">train/000184.jpeg</td>
+      <td class="y">0</td>
+      <td>True</td>
+      <td>EGYPT/DL</td>
+    </tr>
+    <tr>
+      <td class="idx">1</td>
+      <td>004902</td>
+      <td class="x">train/004902.jpeg</td>
+      <td class="y">1</td>
+      <td>True</td>
+      <td>GUINEA/DL</td>
+    </tr>
+    <tr>
+      <td class="idx">2</td>
+      <td>011330</td>
+      <td class="x">train/011330.jpeg</td>
+      <td class="y">0</td>
+      <td>True</td>
+      <td>BENIN/DL</td>
+    </tr>
+    <tr>
+      <td class="idx">3</td>
+      <td>028441</td>
+      <td class="x">train/028441.jpeg</td>
+      <td class="y">1</td>
+      <td>False</td>
+      <td>MOZAMBIQUE/DL</td>
+    </tr>
+    <tr>
+      <td class="idx">4</td>
+      <td>033102</td>
+      <td class="x">train/033102.jpeg</td>
+      <td class="y">1</td>
+      <td>True</td>
+      <td>MAURITIUS/ID</td>
+    </tr>
+  </table>
+  <div class="legend">
+    <span style="background:#e7f0fa">X = a foto vira números (cor, contraste, gradiente)</span>
+    <span style="background:#e5f6ec">Y = 0 legítimo · 1 fraude</span>
+    <span>0 → 57,7% do treino completo</span>
+    <span>1 → 42,3% do treino completo</span>
+    <span>DL = carteira · ID = identidade</span>
+  </div>
+  <p class="explica">Como ler uma linha: na linha 0 o caminho aponta uma foto de carteira do Egito e o label é 0, então esse exemplo ensina “legítimo”. Na linha 1 o label é 1, então ensina “fraude”. O modelo não decora o texto do CSV. O programa abre a imagem, reduz para 128×128 e calcula histograma, média, desvio e gradiente. Esses números são o X que entra no fit. O arquivo real tem 69.352 linhas. A grade acima é só o formato, com linhas de exemplo. O experimento usou 544 imagens: 394 no treino, 109 no teste do Egito e 41 no teste de Moçambique.</p>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-sec="dataset">
+  <h1>Fluxo padrão no Scikit-Learn</h1>
+  <div class="rule"></div>
+  <p class="fala"><b>O que eu falo:</b> o Scikit-Learn é o controle remoto da aula: troca o modelo e os botões continuam fit, transform e predict. Eu segui os quatro passos. Primeiro separei treino e teste, antes de qualquer conta, para o teste não vazar. Depois o StandardScaler aprende a média e o desvio só no treino e aplica no teste. Aí o modelo dá fit. No fim o predict diz a classe, e o predict_proba diz a chance de fraude.</p>
+  <div class="flow">
+    <div class="step"><strong>1. Split</strong>Separa quem ensina de quem prova. O teste do Egito e o de Moçambique são países que não entram no fit.</div>
+    <div class="arr">→</div>
+    <div class="step"><strong>2. Transformer</strong>O StandardScaler põe cada coluna na mesma escala. Aprende a média no treino e só aplica no teste.</div>
+    <div class="arr">→</div>
+    <div class="step"><strong>3. Predictor</strong>O fit guarda a relação entre os números da foto e o rótulo 0 ou 1. Logística ou floresta.</div>
+    <div class="arr">→</div>
+    <div class="step"><strong>4. Avaliação</strong>O predict diz a classe. O predict_proba diz a chance. Aí entram matriz, acurácia, revocação e AUC.</div>
+  </div>
+  <div class="box" style="margin-top:12px">
+    <p><b>fit</b> aprende com o treino. <b>transform</b> só aplica a média e o desvio já aprendidos. <b>predict</b> devolve 0 ou 1. Se o scaler der fit no teste, a prova vaza para o modelo: ele veria a média das imagens que deveria adivinhar. Por isso o fit do scaler fica só no treino.</p>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-sec="classificacao">
+  <h1>Fronteira de decisão</h1>
+  <div class="rule"></div>
+  <p class="fala"><b>O que eu falo:</b> classificar é desenhar uma cerca no meio dos pontos. De um lado fica o legítimo, do outro a fraude. Se a cerca é uma reta, a fronteira é linear: é o caso da regressão logística. Se a cerca faz curva, é não linear: k-NN, árvore e SVM com kernel. O desenho é ilustração da aula, não é o gráfico das 544 fotos. Ele serve para eu explicar a ideia com o dedo na tela.</p>
+  <div class="grid2">
+    <div>
+      <svg class="fig" viewBox="0 0 460 280" role="img" aria-label="Fronteira linear e fronteira não linear">
+        <line x1="40" y1="246" x2="440" y2="246" stroke="#0d3b66" stroke-width="1.4"/>
+        <line x1="40" y1="246" x2="40" y2="16" stroke="#0d3b66" stroke-width="1.4"/>
+        <text x="430" y="268" font-size="13" fill="#4d5c6b">x1</text>
+        <text x="8" y="22" font-size="13" fill="#4d5c6b">x2</text>
+        <line x1="70" y1="210" x2="400" y2="48" stroke="#2c6eaf" stroke-width="2.4"/>
+        <path d="M80 200 C 150 210, 180 80, 250 120 S 360 40, 410 70" fill="none" stroke="#c47b12" stroke-width="2.4"/>
+        <g fill="#2c6eaf">
+          <circle cx="110" cy="70" r="6"/><circle cx="150" cy="96" r="6"/><circle cx="188" cy="58" r="6"/>
+          <circle cx="130" cy="130" r="6"/><circle cx="210" cy="100" r="6"/><circle cx="250" cy="64" r="6"/>
+        </g>
+        <g fill="#e07a3d">
+          <rect x="250" y="168" width="11" height="11"/><rect x="300" y="150" width="11" height="11"/>
+          <rect x="340" y="188" width="11" height="11"/><rect x="286" y="206" width="11" height="11"/>
+          <rect x="370" y="140" width="11" height="11"/><rect x="220" y="176" width="11" height="11"/>
+        </g>
+        <text x="78" y="36" font-size="13" fill="#2c6eaf">reta · logística / SVM linear</text>
+        <text x="250" y="36" font-size="13" fill="#c47b12">curva · k-NN, árvore, SVM RBF</text>
+      </svg>
+      <p class="cap">Ilustração da Aula 06, não é o gráfico das 544 fotos. Bolinhas azuis são uma classe, quadrados laranja são a outra. A reta azul é fronteira linear. A curva laranja é fronteira não linear.</p>
+    </div>
+    <ul>
+      <li><b>Fronteira linear:</b> uma reta. Regressão logística e SVM linear.</li>
+      <li><b>Fronteira não linear:</b> uma curva ou vários retângulos. k-NN, árvore, SVM com kernel.</li>
+      <li>A Random Forest junta várias árvores. A fronteira fica mais flexível que a de uma árvore só.</li>
+      <li>Mesma acurácia pode vir de fronteiras diferentes. A aula pede para olhar a forma do erro, não só o percentual.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-sec="classificacao">
+  <h1>Classificadores básicos da aula</h1>
+  <div class="rule"></div>
+  <p class="fala"><b>O que eu falo:</b> a aula comparou cinco classificadores básicos mais a floresta. Todos obedecem ao mesmo fit e predict. Eu treinei dois: a regressão logística, que é a reta com probabilidade, e a Random Forest, que é um monte de árvores votando. k-NN, SVM e Naive Bayes são da mesma família e da mesma API. Eu não tenho o número deles porque as fotos não estão nesta máquina, e eu não invento acurácia.</p>
+  <table>
+    <tr><th>Algoritmo</th><th>Como decide</th><th>Neste trabalho</th></tr>
+    <tr><td>k-NN</td><td>Voto dos k vizinhos mais próximos</td><td>Básico da aula. Mesma API. Não entrou neste treino.</td></tr>
+    <tr><td>Regressão logística</td><td>Reta + sigmoide → probabilidade de fraude</td><td><b>Treinado.</b> AUC 0,89 no teste do Egito.</td></tr>
+    <tr><td>Árvore de decisão</td><td>Regras se–então</td><td>É a peça da floresta. A floresta é que foi treinada.</td></tr>
+    <tr><td>SVM</td><td>Margem máxima entre as classes</td><td>Básico da aula. Não entrou neste treino.</td></tr>
+    <tr><td>Naive Bayes</td><td>Probabilidade, atributos tratados como independentes</td><td>Básico da aula. Não entrou neste treino.</td></tr>
+    <tr><td>Random Forest</td><td>Várias árvores votam</td><td><b>Treinado.</b> AUC 0,81 no teste do Egito.</td></tr>
+  </table>
+  <p class="explica">Macete da aula: não existe um algoritmo campeão universal. Os cinco podem até ter a mesma acurácia e desenhar cercas diferentes. k pequeno no k-NN decora o treino (overfitting). k grande demais alisa demais (underfitting). Árvore profunda também decora; a floresta junta muitas árvores para suavizar esse efeito. Neste recorte só há número medido para a logística e para a Random Forest.</p>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-sec="classificacao">
+  <h1>Regressão logística</h1>
+  <div class="rule"></div>
+  <p class="fala"><b>O que eu falo:</b> apesar do nome, isto é classificação. A sigmoide espreme qualquer escore para uma chance entre 0 e 1. Se passa de 0,5, eu marco fraude. No teste da CNH do Egito, 109 fotos que o treino não viu, o AUC foi 0,89. Isso quer dizer que, ao ordenar do mais suspeito para o menos suspeito, o modelo fica bem acima do chute, que seria 0,50. Ele achou 23 das 28 fraudes. A acurácia foi 0,71: acerta menos rótulo seco do que a floresta, mas ordena melhor o risco.</p>
+  <div class="grid2">
+    <div>
+      <ul>
+        <li>O nome diz “regressão”. Na aula ela é <b>classificador</b>.</li>
+        <li>A sigmoide transforma o escore em probabilidade entre 0 e 1.</li>
+        <li>StandardScaler antes do fit, porque o modelo usa combinação linear dos atributos.</li>
+        <li>class_weight balanced: a fraude pesa mais no treino.</li>
+      </ul>
+      <table>
+        <tr><th>Métrica no Egito (n = 109)</th><th>Valor</th></tr>
+        <tr><td>ROC-AUC</td><td>0,89</td></tr>
+        <tr><td>Acurácia</td><td>0,71</td></tr>
+        <tr><td>Revocação da fraude</td><td>0,82 (23 de 28)</td></tr>
+        <tr><td>Score FREUID (menor é melhor)</td><td>0,28</td></tr>
+      </table>
+    </div>
+    <div>
+      <svg class="fig" viewBox="0 0 420 250" role="img" aria-label="Curva sigmoide entre 0 e 1">
+        <line x1="46" y1="210" x2="390" y2="210" stroke="#0d3b66"/>
+        <line x1="46" y1="210" x2="46" y2="24" stroke="#0d3b66"/>
+        <line x1="46" y1="40" x2="390" y2="40" stroke="#d5dde6" stroke-dasharray="4 3"/>
+        <line x1="46" y1="125" x2="390" y2="125" stroke="#d5dde6" stroke-dasharray="4 3"/>
+        <text x="8" y="44" font-size="13" fill="#4d5c6b">1</text>
+        <text x="8" y="129" font-size="13" fill="#4d5c6b">0,5</text>
+        <text x="8" y="214" font-size="13" fill="#4d5c6b">0</text>
+        <path d="M60 200 C 150 198, 180 40, 230 40 C 280 40, 300 198, 380 196" fill="none" stroke="#2c6eaf" stroke-width="3"/>
+        <text x="250" y="78" font-size="14" fill="#2c6eaf">P(fraude)</text>
+        <text x="300" y="232" font-size="13" fill="#4d5c6b">escore</text>
+      </svg>
+      <p class="explica">A curva é a sigmoide. Ela prende a chance entre 0 e 1. O corte 0,5 vira o sim ou não do predict. O AUC não olha só esse corte: ele vê se, ao ordenar as 109 fotos da mais suspeita para a menos suspeita, a fraude tende a ficar na frente. 0,89 é bem acima do chute, que seria 0,50. O score FREUID junta esse AUC com o erro quando quase nenhum legítimo pode ser recusado. Nesse score, menor é melhor: 0,28.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-sec="classificacao">
+  <h1>Random Forest</h1>
+  <div class="rule"></div>
+  <p class="fala"><b>O que eu falo:</b> uma árvore é uma sequência de perguntas se–então, como no desenho do Iris da aula. A Random Forest treina 300 árvores e a classe sai do voto da maioria. Ela não precisa de StandardScaler, porque não mede distância. No Egito a acurácia foi 0,82, maior que os 0,71 da logística. A revocação da fraude foi 0,68: achou 19 das 28. O AUC foi 0,81. Resumo que eu decoro: a floresta acerta mais o sim ou não; a logística separa melhor quem é arriscado.</p>
+  <div class="grid2">
+    <div>
+      <svg class="fig" viewBox="0 0 420 230" role="img" aria-label="Árvore de decisão se então">
+        <rect x="145" y="16" width="150" height="36" rx="6" fill="#0d3b66"/>
+        <text x="220" y="39" text-anchor="middle" fill="#fff" font-size="13">atributo ≤ corte?</text>
+        <line x1="175" y1="52" x2="90" y2="96" stroke="#0d3b66"/>
+        <line x1="265" y1="52" x2="330" y2="96" stroke="#0d3b66"/>
+        <text x="108" y="78" font-size="12" fill="#4d5c6b">sim</text>
+        <text x="292" y="78" font-size="12" fill="#4d5c6b">não</text>
+        <rect x="28" y="100" width="120" height="34" rx="6" fill="#d9f0e3" stroke="#1f7a4d"/>
+        <text x="88" y="122" text-anchor="middle" font-size="13" fill="#1f7a4d">legítimo</text>
+        <rect x="268" y="100" width="130" height="34" rx="6" fill="#f4f7fb" stroke="#0d3b66"/>
+        <text x="333" y="122" text-anchor="middle" font-size="13" fill="#0d3b66">outro corte?</text>
+        <line x1="300" y1="134" x2="250" y2="176" stroke="#0d3b66"/>
+        <line x1="360" y1="134" x2="390" y2="176" stroke="#0d3b66"/>
+        <rect x="188" y="178" width="110" height="32" rx="6" fill="#f8d6d6" stroke="#a33b3b"/>
+        <text x="243" y="199" text-anchor="middle" font-size="13" fill="#a33b3b">fraude</text>
+        <rect x="340" y="178" width="70" height="32" rx="6" fill="#d9f0e3" stroke="#1f7a4d"/>
+        <text x="375" y="199" text-anchor="middle" font-size="12" fill="#1f7a4d">legítimo</text>
+      </svg>
+      <p class="explica">Exemplo de voto: das árvores que olham um documento novo, a maioria diz “fraude”, então a floresta marca fraude. Uma árvore só, se crescer até o fundo, decora o treino. Trezentas árvores, com folha de pelo menos 2 amostras, votam juntas. No Egito ela acerta mais o rótulo seco (acurácia 0,82) e acha menos fraude (19 de 28) do que a logística (23 de 28).</p>
+    </div>
+    <div>
+      <ul>
+        <li>300 árvores, profundidade máxima 20, folha com pelo menos 2 amostras.</li>
+        <li>Árvore não usa distância, então este modelo entrou sem StandardScaler.</li>
+        <li>No Egito (109 imagens) a floresta <b>acerta mais rótulos</b> e <b>ordena pior o risco</b>.</li>
+      </ul>
+      <table>
+        <tr><th>Métrica no Egito</th><th>Floresta</th><th>Logística</th></tr>
+        <tr><td>ROC-AUC</td><td>0,81</td><td>0,89</td></tr>
+        <tr><td>Acurácia</td><td>0,82</td><td>0,71</td></tr>
+        <tr><td>Revocação da fraude</td><td>0,68 (19 de 28)</td><td>0,82 (23 de 28)</td></tr>
+        <tr><td>Score FREUID</td><td>0,33</td><td>0,28</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide" data-sec="regressao">
+  <h1>Regressão: o alvo é um número</h1>
+  <div class="rule"></div>
+  <p class="fala"><b>O que eu falo:</b> classificação pergunta qual classe. Regressão pergunta qual valor. Preço de casa, temperatura e demanda são regressão, porque a resposta é um número solto. O erro é y menos ŷ, e a aula mede isso com MAE e MSE. Linear, Ridge e Lasso estão nesta tabela porque fazem parte da aula. No FREUID o Y só pode ser 0 ou 1, então esses modelos não são o experimento. Eu os explico para mostrar que eu sei por que não os usei como resultado.</p>
+  <table>
+    <tr><th>Algoritmo da aula</th><th>Classe no Scikit-Learn</th><th>O que faz</th></tr>
+    <tr><td>Regressão linear (OLS)</td><td>LinearRegression</td><td>Reta que reduz o erro quadrático</td></tr>
+    <tr><td>Ridge</td><td>Ridge</td><td>Encolhe os coeficientes (penalidade L2)</td></tr>
+    <tr><td>Lasso</td><td>Lasso</td><td>Pode zerar coeficiente (penalidade L1)</td></tr>
+    <tr><td>Árvore de regressão</td><td>DecisionTreeRegressor</td><td>Média numérica em cada folha</td></tr>
+    <tr><td>SVR</td><td>SVR</td><td>Faixa ao redor da curva</td></tr>
+  </table>
+  <div class="box" style="margin-top:14px">
+    <p>Exemplo da aula: o valor real de uma casa é 500.000 e o modelo prevê 470.000. O erro é 30.000. MAE tira a média desses erros em módulo. MSE eleva o erro ao quadrado antes da média, então erra grande pesa mais. RMSE é a raiz do MSE e volta para a unidade original (reais, graus). Nada disso mede “fraude ou não”. O Y do FREUID só assume 0 ou 1, então a leitura certa é a matriz de confusão.</p>
+  </div>
+</section>
+
+<!-- 11 -->
+<section class="slide" data-sec="regressao">
+  <h1>Reta e sigmoide no mesmo Y</h1>
+  <div class="rule"></div>
+  <p class="fala"><b>O que eu falo:</b> se eu enfiar o rótulo 0 e 1 numa regressão linear, a reta atravessa para baixo de 0 e para cima de 1. Probabilidade não pode ser 1,3 nem −0,2. A logística resolve isso com a sigmoide: a curva sobe e encosta em 0 e em 1. Por isso o modelo que eu medi é o da direita. O desenho é o da aula, para eu apontar a diferença com a mão.</p>
+  <div class="twofig">
+    <figure style="margin:0">
+      <svg class="fig" viewBox="0 0 420 250" role="img" aria-label="Reta de regressão saindo do intervalo 0 a 1">
+        <text x="16" y="22" font-size="15" fill="#0d3b66" font-weight="700">Regressão linear</text>
+        <line x1="48" y1="200" x2="390" y2="200" stroke="#0d3b66"/>
+        <line x1="48" y1="210" x2="48" y2="36" stroke="#0d3b66"/>
+        <line x1="70" y1="214" x2="340" y2="8" stroke="#a33b3b" stroke-width="2.5"/>
+        <g fill="#2c6eaf">
+          <circle cx="120" cy="200" r="5"/><circle cx="150" cy="200" r="5"/><circle cx="185" cy="200" r="5"/>
+        </g>
+        <g fill="#e07a3d">
+          <circle cx="250" cy="48" r="5"/><circle cx="290" cy="48" r="5"/><circle cx="330" cy="48" r="5"/>
+        </g>
+        <text x="300" y="230" font-size="13" fill="#4d5c6b">a reta passa fora de 0 e 1</text>
+      </svg>
+    </figure>
+    <figure style="margin:0">
+      <svg class="fig" viewBox="0 0 420 250" role="img" aria-label="Sigmoide presa entre 0 e 1">
+        <text x="16" y="22" font-size="15" fill="#0d3b66" font-weight="700">Regressão logística</text>
+        <line x1="48" y1="200" x2="390" y2="200" stroke="#0d3b66"/>
+        <line x1="48" y1="210" x2="48" y2="36" stroke="#0d3b66"/>
+        <line x1="48" y1="48" x2="390" y2="48" stroke="#d5dde6" stroke-dasharray="4 3"/>
+        <path d="M70 198 C 160 198, 190 50, 230 50 C 280 50, 300 198, 370 196" fill="none" stroke="#2c6eaf" stroke-width="2.5"/>
+        <g fill="#2c6eaf">
+          <circle cx="120" cy="200" r="5"/><circle cx="150" cy="200" r="5"/><circle cx="180" cy="200" r="5"/>
+        </g>
+        <g fill="#e07a3d">
+          <circle cx="270" cy="48" r="5"/><circle cx="310" cy="48" r="5"/><circle cx="350" cy="48" r="5"/>
+        </g>
+        <text x="250" y="230" font-size="13" fill="#4d5c6b">a curva fica entre 0 e 1</text>
+      </svg>
+    </figure>
+  </div>
+  <p class="explica">À esquerda, a reta da regressão linear atravessa para fora de 0 e de 1. Uma “probabilidade” de 1,3 ou de −0,2 não tem sentido no cadastro. À direita, a sigmoide sobe e encosta nesses dois limites. Por isso o modelo medido no FREUID é o da direita, mesmo o nome dele carregar a palavra regressão. Pontos azuis são a classe 0. Pontos laranja são a classe 1. O desenho é didático, no formato da aula.</p>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-sec="metricas">
+  <h1>Matriz de confusão — regressão logística</h1>
+  <div class="rule"></div>
+  <p class="fala"><b>O que eu falo:</b> a matriz cruza o que o documento era com o que o modelo disse. Positivo, na aula, é a classe que nos importa: aqui é fraude. VP é fraude pega, 23. FN é fraude que passou, 5. Esse é o erro grave do órgão. FP é cidadão honesto chamado de volta, 27. VN é honesto aceito, 54. Soma 109. Eu leio a matriz como história, não como tabela decorada.</p>
+  <div class="grid2">
+    <table class="cm">
+      <tr><th></th><th>Previsto fraude</th><th>Previsto legítimo</th></tr>
+      <tr><th>Real fraude</th><td class="vp"><span class="n">23</span>VP</td><td class="fn"><span class="n">5</span>FN</td></tr>
+      <tr><th>Real legítimo</th><td class="fp"><span class="n">27</span>FP</td><td class="vn"><span class="n">54</span>VN</td></tr>
+    </table>
+    <ul>
+      <li><b>VP 23</b> — fraude marcada.</li>
+      <li><b>FN 5</b> — fraude que passaria.</li>
+      <li><b>FP 27</b> — legítimo enviado para revisão.</li>
+      <li><b>VN 54</b> — legítimo aceito.</li>
+      <li>28 fraudes e 81 legítimos nesse teste.</li>
+    </ul>
+  </div>
+  <p class="explica">Some a linha da fraude: 23 + 5 = 28 fraudes reais. Some a linha do legítimo: 27 + 54 = 81. Some tudo: 109, que é o teste do Egito. O erro que o órgão mais teme é o FN, a fraude que passou. O FP não é um acerto, mas ele manda o cidadão para uma segunda olhada humana, em vez de deixar o falso entrar.</p>
+</section>
+
+<!-- 13 -->
+<section class="slide" data-sec="metricas">
+  <h1>Métricas tiradas da matriz</h1>
+  <div class="rule"></div>
+  <p class="fala"><b>O que eu falo:</b> acurácia é o acerto geral: 77 de 109, ou 0,71. Ela parece boa e esconde um detalhe. Precisão 0,46 quer dizer que, de cada duas vezes que o modelo grita fraude, uma está errada. Revocação 0,82 quer dizer que, das fraudes verdadeiras, ele acha 82%. F1 junta as duas, 0,59. No cadastro público eu olho a revocação primeiro, porque deixar a fraude passar dói mais do que pedir uma segunda conferência.</p>
+  <div class="grid2">
+    <div>
+      <div class="box" style="margin-bottom:8px"><p><b>Acurácia</b> = (VP + VN) / total = (23 + 54) / 109 = <b>0,71</b></p></div>
+      <div class="box" style="margin-bottom:8px"><p><b>Precisão</b> = VP / (VP + FP) = 23 / 50 = <b>0,46</b></p></div>
+      <div class="box" style="margin-bottom:8px"><p><b>Revocação</b> = VP / (VP + FN) = 23 / 28 = <b>0,82</b></p></div>
+      <div class="box"><p><b>F1</b> = 2 · precisão · revocação / (precisão + revocação) = <b>0,59</b></p></div>
+    </div>
+    <div>
+      <p class="sub">Leitura no cadastro</p>
+      <ul>
+        <li>Acurácia conta acerto geral. Aqui ela esconde que a precisão da fraude é 0,46.</li>
+        <li>Revocação pergunta: das fraudes reais, quantas o modelo encontrou?</li>
+        <li>Precisão pergunta: das marcações de fraude, quantas eram fraude?</li>
+        <li>No órgão, o FN pesa mais que o FP. Por isso a revocação entra ao lado da acurácia.</li>
+        <li>F1 só fica alto quando precisão e revocação estão altas juntas. Aqui ele é 0,59 porque a precisão é 0,46.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 14 -->
+<section class="slide" data-sec="resultado">
+  <h1>Os dois modelos no mesmo teste</h1>
+  <div class="rule"></div>
+  <p class="fala"><b>O que eu falo:</b> azul é logística, laranja é floresta, nas 109 CNHs do Egito. A barra de AUC é mais alta na azul: 0,89 contra 0,81. A barra de acurácia é mais alta na laranja: 0,82 contra 0,71. A de revocação volta para a azul: 0,82 contra 0,68. Eu não coro um campeão. Os dois batem o acaso. Quando o documento muda para Moçambique, 41 fotos, os dois caem para AUC perto de 0,69 e passam a chamar quase tudo de fraude. O modelo aprendeu o visual dos países do treino.</p>
+  <div class="bars">
+    <div class="barline"><span>AUC</span><div><div class="track"><i class="lg" style="width:89%;background:#2c6eaf"></i></div><div class="track" style="margin-top:3px"><i style="width:81%;background:#e09a3a"></i></div></div><b>0,89<br>0,81</b></div>
+    <div class="barline"><span>Acurácia</span><div><div class="track"><i style="width:71%;background:#2c6eaf"></i></div><div class="track" style="margin-top:3px"><i style="width:82%;background:#e09a3a"></i></div></div><b>0,71<br>0,82</b></div>
+    <div class="barline"><span>Revocação</span><div><div class="track"><i style="width:82%;background:#2c6eaf"></i></div><div class="track" style="margin-top:3px"><i style="width:68%;background:#e09a3a"></i></div></div><b>0,82<br>0,68</b></div>
+  </div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="box"><h3>Egito · n = 109</h3><p>Como ler a barra: quanto mais comprida, maior o número. Azul é logística, laranja é floresta. AUC 0,89 contra 0,81. Os dois passam de 0,50, que seria ordenar no chute. Com 109 fotos a diferença não coroa um vencedor definitivo.</p></div>
+    <div class="box"><h3>Moçambique · n = 41</h3><p>Esse país inteiro ficou fora do treino. O AUC cai para cerca de 0,69 e a acurácia fica em 0,51. No corte 0,5 os dois passam a marcar quase tudo como fraude: acham as fraudes porque acusam quase todo mundo.</p></div>
+  </div>
+</section>
+
+<!-- 15 -->
+<section class="slide" data-sec="resultado">
+  <h1>O que as 544 imagens respondem</h1>
+  <div class="rule"></div>
+  <p class="fala"><b>O que eu falo para fechar:</b> o dataset serve, porque tem X e Y. A técnica é classificação da aula, logística e Random Forest. A regressão de valor eu expliquei para mostrar a diferença, e não entrei como resultado. 544 fotos bastam para dizer que a ideia funciona no Egito e fraqueja em outro país. Não bastam para dizer o placar das 69 mil. O cartaz e a regra de uso estão em <a href="https://freuid2026.microblink.com/" target="_blank" rel="noopener">freuid2026.microblink.com</a>. Os dados são sintéticos e a licença é só pesquisa, sem produto comercial.</p>
+  <table>
+    <tr><th>Pergunta da disciplina</th><th>Resposta deste trabalho</th></tr>
+    <tr><td>Qual é o dataset?</td><td>FREUID 2026, fraude em documento, ligado à validação cadastral.</td></tr>
+    <tr><td>Serve para IA?</td><td>Sim. X = características da imagem. Y = 0 ou 1.</td></tr>
+    <tr><td>Qual técnica?</td><td>Classificação. Regressão logística e Random Forest, no fluxo fit / predict da aula.</td></tr>
+    <tr><td>E a regressão de valor?</td><td>Fica no referencial da aula. O Y daqui é classe, então a métrica é a matriz, não o MAE.</td></tr>
+    <tr><td>O que o número sustenta?</td><td>No Egito os dois separam melhor que o acaso. Em Moçambique o mesmo treino desanda. 544 imagens são cerca de 0,8% das 69.352, então isto é um experimento de aula, não o placar da competição.</td></tr>
+  </table>
+  <p class="cap">Relić et al. The FREUID Challenge 2026. Kaggle, 2026. Dataset do Microblink Fraud Lab, pesquisa não comercial.</p>
+</section>
+
+<div class="foot"><span><b id="n">1</b> / 15</span><span>IIG0029 — Técnicas de IA I &nbsp;|&nbsp; João Henrique Gomes Dias &nbsp;|&nbsp; versão com a fala</span><span>setas ou espaço</span></div>
+
+<script>
+const slides = [...document.querySelectorAll(".slide")];
+const buttons = [...document.querySelectorAll("aside button")];
+let i = 0;
+function show(k) {
+  slides[i].classList.remove("active");
+  i = (k + slides.length) % slides.length;
+  slides[i].classList.add("active");
+  document.getElementById("n").textContent = i + 1;
+  const sec = slides[i].dataset.sec;
+  buttons.forEach(b => b.classList.toggle("on", b.dataset.sec === sec));
+}
+buttons.forEach(b => b.addEventListener("click", () => {
+  const idx = slides.findIndex(s => s.dataset.sec === b.dataset.sec);
+  if (idx >= 0) show(idx);
+}));
+show(0);
+addEventListener("keydown", e => {
+  if (["ArrowRight", " ", "PageDown"].includes(e.key)) { e.preventDefault(); show(i + 1); }
+  if (["ArrowLeft", "PageUp"].includes(e.key)) { e.preventDefault(); show(i - 1); }
+});
+addEventListener("click", e => {
+  if (e.target.closest("aside")) return;
+  if (e.clientX > innerWidth * 0.72) show(i + 1);
+  else if (e.clientX < innerWidth * 0.28 && e.clientX > 198) show(i - 1);
+});
+</script>
+</body>
+</html>
