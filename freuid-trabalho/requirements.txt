@@ -1,0 +1,9 @@
+kaggle
+pandas
+numpy
+scikit-learn
+pillow
+tqdm
+matplotlib
+seaborn
+tabulate

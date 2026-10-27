@@ -1,0 +1,58 @@
+{
+  "heldout_type": "MOZAMBIQUE/DL",
+  "n_total": 544,
+  "n_train": 394,
+  "n_test_id": 109,
+  "n_test_ood": 41,
+  "metrics": [
+    {
+      "model": "logistic_regression",
+      "split": "id",
+      "n": 109,
+      "roc_auc": 0.8889,
+      "audet": 0.1111,
+      "apcer@1%bpcer": 0.3929,
+      "freuid_score": 0.2785,
+      "accuracy": 0.7064,
+      "f1_fraude": 0.5897,
+      "recall_fraude": 0.8214
+    },
+    {
+      "model": "logistic_regression",
+      "split": "ood",
+      "n": 41,
+      "roc_auc": 0.6869,
+      "audet": 0.3131,
+      "apcer@1%bpcer": 1.0,
+      "freuid_score": 1.0,
+      "accuracy": 0.5122,
+      "f1_fraude": 0.6667,
+      "recall_fraude": 1.0
+    },
+    {
+      "model": "random_forest",
+      "split": "id",
+      "n": 109,
+      "roc_auc": 0.8082,
+      "audet": 0.1918,
+      "apcer@1%bpcer": 0.4286,
+      "freuid_score": 0.3305,
+      "accuracy": 0.8165,
+      "f1_fraude": 0.6552,
+      "recall_fraude": 0.6786
+    },
+    {
+      "model": "random_forest",
+      "split": "ood",
+      "n": 41,
+      "roc_auc": 0.6905,
+      "audet": 0.3095,
+      "apcer@1%bpcer": 0.7,
+      "freuid_score": 0.5817,
+      "accuracy": 0.5122,
+      "f1_fraude": 0.6667,
+      "recall_fraude": 1.0
+    }
+  ],
+  "note": "Features clássicas (histograma + estatísticas). CNN/transfer learning no notebook Kaggle."
+}

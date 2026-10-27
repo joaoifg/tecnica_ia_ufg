@@ -1,0 +1,16 @@
+.venv/
+**/.venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+.ipynb_checkpoints/
+kaggle.json
+access_token
+*.pt
+*.pth
+
+# Dataset FREUID: não versionar (licença Microblink)
+freuid-trabalho/data/
+
+# Slides das aulas (material do professor)
+*.pdf

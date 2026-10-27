@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fraude documental · Técnicas de IA I</title>
+<style>
+  :root {
+    --bg: #07131f;
+    --bg2: #10243a;
+    --ink: #f4f7fb;
+    --muted: #b7c6d6;
+    --gold: #f0c14a;
+    --mint: #3dceb0;
+    --coral: #ff6b57;
+    --line: rgba(255,255,255,.12);
+    --card: rgba(16, 40, 64, .72);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", system-ui, sans-serif; }
+  .progress { position: fixed; top: 0; left: 0; height: 4px; background: linear-gradient(90deg, var(--gold), var(--coral));
+    width: 0; z-index: 5; transition: width .35s ease; }
+  section.slide {
+    min-height: 100vh; display: none; flex-direction: column; justify-content: center;
+    padding: 2.6rem 6.5vw 3.2rem;
+    background:
+      radial-gradient(900px 420px at 90% -10%, rgba(240,193,74,.16), transparent 60%),
+      radial-gradient(700px 380px at -10% 110%, rgba(61,206,176,.12), transparent 55%),
+      linear-gradient(160deg, #07131f 0%, #0d2236 48%, #07131f 100%);
+  }
+  section.slide.active { display: flex; }
+  section.slide.active .rise { animation: rise .55s ease both; }
+  section.slide.active .rise:nth-child(2) { animation-delay: .06s; }
+  section.slide.active .rise:nth-child(3) { animation-delay: .12s; }
+  section.slide.active .rise:nth-child(4) { animation-delay: .18s; }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  .kicker { color: var(--gold); letter-spacing: .16em; text-transform: uppercase; font-size: .78rem; font-weight: 700; margin: 0 0 .7rem; }
+  h1 { font-family: Georgia, "Palatino Linotype", serif; font-weight: 500;
+    font-size: clamp(1.85rem, 3.8vw, 3.05rem); line-height: 1.08; margin: 0 0 .55rem; letter-spacing: -.02em; }
+  h1 em { font-style: italic; color: var(--gold); }
+  .lead { font-size: clamp(1.05rem, 1.8vw, 1.35rem); color: var(--muted); max-width: 46rem; line-height: 1.45; margin: 0; }
+  .row { display: flex; gap: .85rem; flex-wrap: wrap; margin-top: 1rem; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: .85rem 1rem; flex: 1; min-width: 200px; }
+  .card h3 { margin: 0 0 .35rem; font-size: 1.05rem; }
+  .card p { margin: 0; color: var(--muted); line-height: 1.4; }
+  .num { font-family: Georgia, serif; font-size: clamp(2.2rem, 4vw, 3.2rem); color: #fff; line-height: 1; }
+  .num small { display: block; font-family: "Segoe UI", sans-serif; font-size: .85rem; color: var(--muted); margin-top: .35rem; letter-spacing: 0; }
+  .gold { color: var(--gold); } .mint { color: var(--mint); } .coral { color: var(--coral); }
+  .bar { height: 18px; border-radius: 999px; overflow: hidden; display: flex; background: #1a3148; margin: .45rem 0 .2rem; }
+  .bar span { display: block; height: 100%; }
+  .pills { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .8rem; }
+  .pill { border: 1px solid var(--line); border-radius: 999px; padding: .35rem .75rem; color: var(--muted); font-size: .92rem; }
+  .formula { font-family: Consolas, "Courier New", monospace; font-size: clamp(1.6rem, 3.4vw, 2.6rem); margin: .4rem 0 1rem; }
+  .pipeline { display: grid; grid-template-columns: 1.2fr .4fr 1fr .4fr 1.2fr; gap: .6rem; align-items: stretch; margin-top: 1rem; }
+  .pipe { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 1rem; }
+  .arrow { display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 1.8rem; }
+  table { width: min(980px, 100%); border-collapse: collapse; margin-top: .8rem; font-size: clamp(.9rem, 1.4vw, 1.05rem); }
+  th, td { text-align: left; padding: .62rem .7rem; border-bottom: 1px solid var(--line); }
+  th { color: var(--gold); font-weight: 650; }
+  .score { display: grid; grid-template-columns: 1.1fr 1fr; gap: 1.2rem; align-items: center; }
+  .meter { height: 14px; background: #1a3148; border-radius: 99px; overflow: hidden; margin: .35rem 0 .9rem; }
+  .meter i { display: block; height: 100%; border-radius: 99px; }
+  .cm { display: grid; grid-template-columns: 90px 1fr 1fr; gap: 8px; max-width: 460px; }
+  .cm div { border-radius: 12px; min-height: 78px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 700; }
+  .cm .h { min-height: auto; color: var(--muted); font-weight: 600; font-size: .85rem; background: transparent; }
+  .cm b { font-family: Georgia, serif; font-size: 1.7rem; }
+  .cm small { font-weight: 500; opacity: .85; }
+  .chart { background: #fff; border-radius: 14px; padding: .4rem; max-width: 520px; }
+  .chart img { width: 100%; display: block; }
+  .steps { counter-reset: s; display: grid; gap: .65rem; margin-top: .6rem; }
+  .steps li { list-style: none; display: flex; gap: .8rem; align-items: flex-start; color: var(--muted); font-size: 1.05rem; }
+  .steps { padding: 0; }
+  .steps li::before { counter-increment: s; content: counter(s); flex: 0 0 2rem; height: 2rem; border-radius: 50%;
+    background: var(--gold); color: #1a1404; font-weight: 800; display: grid; place-items: center; }
+  .foot { position: fixed; bottom: .85rem; left: 7vw; right: 7vw; display: flex; justify-content: space-between;
+    color: #8ea0b3; font-size: .82rem; z-index: 4; pointer-events: none; }
+  .notes { display: none; position: fixed; left: 7vw; right: 7vw; bottom: 2.4rem; background: rgba(7,19,31,.92);
+    border: 1px dashed var(--gold); border-radius: 12px; padding: .7rem 1rem; color: var(--gold); font-size: .95rem; z-index: 6; }
+  body.show-notes .notes.on { display: block; }
+  @media (max-width: 900px) {
+    .pipeline, .score { grid-template-columns: 1fr; }
+    .arrow { transform: rotate(90deg); }
+    section.slide { padding: 3.2rem 1.2rem 4rem; }
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="bar"></div>
+
+<!-- 1 GANCHO -->
+<section class="slide active">
+  <p class="kicker rise">Técnicas de IA I · UFG / IIG · João Henrique Gomes Dias</p>
+  <h1 class="rise">Um documento falso<br>entra no cadastro.<br><em>Quem percebe?</em></h1>
+  <p class="lead rise">Conselhos, benefícios e concursos dependem de um papel (ou de uma foto dele) para dizer se a pessoa é quem diz ser. A pergunta deste trabalho: dá para uma IA aprender a separar documento legítimo de fraude?</p>
+  <div class="row rise">
+    <div class="card"><h3 class="coral">Erro grave</h3><p>Aceitar um documento fraudado. A fraude entra no sistema público.</p></div>
+    <div class="card"><h3 class="mint">Erro caro</h3><p>Barrar um cidadão honesto. Ele precisa voltar, explicar, esperar.</p></div>
+    <div class="card"><h3 class="gold">Papel da IA</h3><p>Não substitui o servidor. Aponta o risco para um humano decidir.</p></div>
+  </div>
+  <p class="notes on">Abra com a cena, não com o dataset. Pergunte à turma: “se fosse o seu cadastro, qual erro incomoda mais?”</p>
+</section>
+
+<!-- 2 ROTEIRO DO PROFESSOR -->
+<section class="slide">
+  <p class="kicker rise">O que o professor pediu</p>
+  <h1 class="rise">Quatro respostas.<br>Uma história.</h1>
+  <div class="row rise">
+    <div class="card"><div class="num">01</div><h3>Dataset</h3><p>Um conjunto do Kaggle ligado à gestão pública.</p></div>
+    <div class="card"><div class="num">02</div><h3>Serve para IA?</h3><p>Só se tiver entrada <b style="color:#fff">X</b> e rótulo <b style="color:#fff">Y</b>.</p></div>
+    <div class="card"><div class="num">03</div><h3>Técnicas</h3><p>Quais modelos da aula, e por quê.</p></div>
+    <div class="card"><div class="num">04</div><h3>Artigo</h3><p>Explicar <b style="color:#fff">tudo</b> o que foi desenvolvido.</p></div>
+  </div>
+  <p class="notes on">Diga em voz alta: “vou responder exatamente os quatro pontos do quadro.”</p>
+</section>
+
+<!-- 3 DATASET -->
+<section class="slide">
+  <p class="kicker rise">1 · Dataset</p>
+  <h1 class="rise">69 mil documentos.<br>Metade honesta, quase metade falsa.</h1>
+  <div class="row rise">
+    <div class="card" style="flex:1.3">
+      <p style="margin:0 0 .3rem;color:var(--muted)">FREUID Challenge 2026 · Kaggle · imagens sintéticas</p>
+      <div class="bar" title="proporção das classes">
+        <span style="width:57.7%;background:var(--mint)"></span>
+        <span style="width:42.3%;background:var(--coral)"></span>
+      </div>
+      <p><span class="mint">57,7% legítimo</span> · <span class="coral">42,3% fraude</span></p>
+      <div class="pills">
+        <span class="pill">Benin · CNH</span>
+        <span class="pill">Egito · CNH</span>
+        <span class="pill">Guiné · CNH</span>
+        <span class="pill">Moçambique · CNH</span>
+        <span class="pill">Maurício · identidade</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="num">69.352<small>imagens de treino, com rótulo</small></div>
+      <p style="margin-top:.9rem">Fraudes do dataset: manipulação, edição por IA e foto de documento impresso. Nenhum documento é de pessoa real.</p>
+    </div>
+  </div>
+  <p class="notes on">Ligue à gestão pública: “é o mesmo tipo de checagem de um cadastro de conselho ou de benefício.”</p>
+</section>
+
+<!-- 4 FORMULA -->
+<section class="slide">
+  <p class="kicker rise">2 · Serve para IA?</p>
+  <h1 class="rise">Sim. Tem dado e tem resposta.</h1>
+  <p class="formula rise">D = { (x , y) }</p>
+  <div class="pipeline rise">
+    <div class="pipe">
+      <h3>X · o que a IA lê</h3>
+      <p>A imagem vira números: cores, contraste, “rugosidade” da foto. É a entrada, como os dados do cliente no exemplo de fraude da aula.</p>
+    </div>
+    <div class="arrow">→</div>
+    <div class="pipe" style="border-color:rgba(240,193,74,.45)">
+      <h3 class="gold">Treino</h3>
+      <p>O modelo vê muitos pares e aprende o padrão que separa um do outro.</p>
+    </div>
+    <div class="arrow">→</div>
+    <div class="pipe">
+      <h3>Y · o rótulo</h3>
+      <p>A última coluna, igual ao quadro:<br><b>é fraude? não</b> (0)<br><b>é fraude? sim</b> (1)</p>
+    </div>
+  </div>
+  <p class="lead rise" style="margin-top:1rem">Classificação binária supervisionada. Sem o Y, não haveria o que prever.</p>
+  <p class="notes on">Repita a frase dele: “você treina a IA a ler os dados para predizer o rótulo.” Aponte o X e o Y na tela.</p>
+</section>
+
+<!-- 5 TECNICAS -->
+<section class="slide">
+  <p class="kicker rise">3 · Técnicas da aula</p>
+  <h1 class="rise">Dois modelos.<br>A mesma pergunta.</h1>
+  <div class="row rise">
+    <div class="card">
+      <p class="kicker">Modelo 1</p>
+      <h3>Regressão logística</h3>
+      <p>Traça uma fronteira reta entre “legítimo” e “fraude”. Simples, rápida, e foi a que melhor ordenou o risco neste teste.</p>
+    </div>
+    <div class="card">
+      <p class="kicker">Modelo 2</p>
+      <h3>Random Forest</h3>
+      <p>Várias árvores de decisão votam juntas. Enxerga regras mais tortas. Acertou mais no “sim/não” seco, mas ordenou pior o risco.</p>
+    </div>
+    <div class="card">
+      <p class="kicker">Como medimos</p>
+      <h3>Não basta a acurácia</h3>
+      <p>Matriz de confusão, recall da fraude, F1 e curva ROC. O recall importa: fraude que passa é o erro que o órgão não quer.</p>
+    </div>
+  </div>
+  <p class="notes on">Diga que os dois estão no scikit-learn, o mesmo espírito dos exemplos da aula — não é rede neural.</p>
+</section>
+
+<!-- 6 PROCESSO -->
+<section class="slide">
+  <p class="kicker rise">Como foi feito</p>
+  <h1 class="rise">Do CSV ao gráfico,<br>em cinco passos.</h1>
+  <ol class="steps rise">
+    <li>Ler os rótulos e contar: quantos legítimos, quantas fraudes, quais países.</li>
+    <li>Transformar cada imagem em um vetor de características (o X).</li>
+    <li>Separar treino e teste. Um país inteiro ficou de fora, para ver se o modelo generaliza.</li>
+    <li>Treinar regressão logística e Random Forest no mesmo X.</li>
+    <li>Comparar matriz de confusão, ROC e recall — e guardar tudo para o artigo.</li>
+  </ol>
+  <p class="notes on">O teste usou 544 imagens locais. O dataset completo tem 69 mil; o recorte já responde se a ideia funciona.</p>
+</section>
+
+<!-- 7 PLACAR -->
+<section class="slide">
+  <p class="kicker rise">Resultado · documentos de tipos já vistos</p>
+  <h1 class="rise">A logística acertou<br>o <em>risco</em>. A floresta, o <em>rótulo</em>.</h1>
+  <div class="score rise">
+    <div>
+      <p style="margin:0">ROC-AUC — quanto maior, melhor a ordenação</p>
+      <p style="margin:.6rem 0 0">Regressão logística <b class="gold">0,89</b></p>
+      <div class="meter"><i style="width:89%;background:var(--gold)"></i></div>
+      <p style="margin:0">Random Forest <b>0,81</b></p>
+      <div class="meter"><i style="width:81%;background:#7eb6e0"></i></div>
+      <p style="color:var(--muted);margin:.2rem 0 0">Acurácia: floresta <b style="color:#fff">82%</b> · logística <b style="color:#fff">71%</b><br>Recall da fraude: logística <b class="coral">82%</b> · floresta 68%</p>
+    </div>
+    <div>
+      <p style="margin:0 0 .5rem;color:var(--muted)">Matriz · regressão logística (teste)</p>
+      <div class="cm">
+        <div class="h"></div><div class="h">previu legítimo</div><div class="h">previu fraude</div>
+        <div class="h">era legítimo</div>
+        <div style="background:#1f6b4a"><b>54</b><small>acerto</small></div>
+        <div style="background:#8a5a12"><b>27</b><small>alarme extra</small></div>
+        <div class="h">era fraude</div>
+        <div style="background:#7a2430"><b>5</b><small>passou</small></div>
+        <div style="background:#1d4e78"><b>23</b><small>pega</small></div>
+      </div>
+      <p style="color:var(--muted);font-size:.92rem">De 28 fraudes, 23 foram marcadas. 5 passariam. 27 honestos iriam para revisão humana.</p>
+    </div>
+  </div>
+  <p class="notes on">Leia a matriz como história: “23 fraudes pegas, 5 escaparam, 27 cidadãos chamados de volta.” Esse é o custo assimétrico.</p>
+</section>
+
+<!-- 8 ROC -->
+<section class="slide">
+  <p class="kicker rise">A curva que a aula ensina a ler</p>
+  <h1 class="rise">Acima da diagonal<br>é melhor que o chute.</h1>
+  <div class="score rise">
+    <div class="chart"><img src="roc_compare_id.png" alt="Curva ROC comparando regressão logística e random forest" /></div>
+    <div>
+      <div class="card" style="margin-bottom:.8rem">
+        <h3 class="gold">0,89 · logística</h3>
+        <p>A curva azul sobe mais cedo: com poucos alarmes falsos, já pega mais fraudes.</p>
+      </div>
+      <div class="card">
+        <h3>0,81 · floresta</h3>
+        <p>Também bem acima do acaso (0,50), mas perde para a logística neste recorte.</p>
+      </div>
+      <p class="lead" style="margin-top:1rem">Por isso a acurácia sozinha engana: a floresta “acerta mais rótulos”, a logística separa melhor quem é arriscado.</p>
+    </div>
+  </div>
+  <p class="notes on">Aponte a linha tracejada: “chute”. As duas curvas estão acima. A azul ganha.</p>
+</section>
+
+<!-- 9 VIRADA -->
+<section class="slide">
+  <p class="kicker rise">O resultado que mais ensina</p>
+  <h1 class="rise">Tirou Moçambique do treino.<br>O modelo <em>piorou</em>.</h1>
+  <div class="row rise">
+    <div class="card">
+      <div class="num gold">0,89<small>AUC quando o tipo de documento já foi visto</small></div>
+    </div>
+    <div class="card">
+      <div class="num coral">0,69<small>AUC em CNH de Moçambique, nunca vista no treino</small></div>
+    </div>
+  </div>
+  <p class="lead rise" style="margin-top:1.2rem">A IA não “entendeu fraude” no abstrato. Ela aprendeu o visual dos documentos com que treinou. Documento novo é outro problema. Isso entra na discussão do artigo — e é exatamente o risco de um órgão que recebe carteiras de formatos diferentes.</p>
+  <p class="notes on">Essa é a virada. Não esconda a queda. O professor gosta de ver limitação consciente.</p>
+</section>
+
+<!-- 10 ARTIGO -->
+<section class="slide">
+  <p class="kicker rise">4 · Estratégia do artigo</p>
+  <h1 class="rise">O artigo conta<br>esta mesma história.</h1>
+  <table class="rise">
+    <tr><th>Capítulo</th><th>O que explica</th></tr>
+    <tr><td>Introdução</td><td>O documento no cadastro público e o custo dos dois erros</td></tr>
+    <tr><td>Referencial</td><td>Classificação, regressão logística, Random Forest, matriz e ROC</td></tr>
+    <tr><td>Métodos</td><td>Dataset, X e Y, características, treino e o teste com país de fora</td></tr>
+    <tr><td>Resultados</td><td>Tabela, matriz, curva — os números desta apresentação</td></tr>
+    <tr><td>Discussão</td><td>Por que a acurácia mente; por que Moçambique caiu; humano no circuito</td></tr>
+    <tr><td>Conclusão</td><td>O que funcionou e o que ainda precisa ser testado</td></tr>
+  </table>
+  <p class="lead rise" style="margin-top:.9rem">Regra do professor: se foi feito no código, aparece no texto.</p>
+  <p class="notes on">Feche o item 4: “não é um artigo genérico de IA. É o diário deste experimento.”</p>
+</section>
+
+<!-- 11 FECHO -->
+<section class="slide">
+  <p class="kicker rise">Para o professor orientar</p>
+  <h1 class="rise">Dataset serve.<br>Técnica é da aula.<br>Artigo explica o caminho.</h1>
+  <div class="row rise">
+    <div class="card"><h3 class="mint">Serve para IA</h3><p>X = características da imagem<br>Y = fraude sim ou não</p></div>
+    <div class="card"><h3 class="gold">Melhor sinal até aqui</h3><p>Regressão logística · AUC 0,89<br>nos tipos já vistos</p></div>
+    <div class="card"><h3>O que peço agora</h3><p>O formato do artigo (ABNT ou outro) e se este recorte está no caminho certo.</p></div>
+  </div>
+  <p class="notes on">Pare e espere a orientação. Não ofereça CNN. Se perguntarem de rede neural: “fica como trabalho futuro, se o senhor indicar.”</p>
+</section>
+
+<div class="foot"><span>João Henrique Gomes Dias · Técnicas de IA I</span><span><span id="n">1</span> / <span id="t">11</span> · setas · N notas</span></div>
+<p class="notes" id="noteSlot"></p>
+
+<script>
+const slides = [...document.querySelectorAll('.slide')];
+const notes = [...document.querySelectorAll('.notes.on')];
+const bar = document.getElementById('bar');
+document.getElementById('t').textContent = slides.length;
+let i = 0;
+function show(k) {
+  slides[i].classList.remove('active');
+  i = (k + slides.length) % slides.length;
+  slides[i].classList.add('active');
+  document.getElementById('n').textContent = i + 1;
+  bar.style.width = ((i + 1) / slides.length * 100) + '%';
+  const slot = document.getElementById('noteSlot');
+  slot.textContent = notes[i] ? notes[i].textContent : '';
+  slot.classList.toggle('on', !!notes[i]);
+}
+show(0);
+addEventListener('keydown', e => {
+  if (['ArrowRight',' ','PageDown'].includes(e.key)) { e.preventDefault(); show(i + 1); }
+  if (['ArrowLeft','PageUp'].includes(e.key)) { e.preventDefault(); show(i - 1); }
+  if (e.key === 'n' || e.key === 'N') document.body.classList.toggle('show-notes');
+});
+addEventListener('click', e => {
+  if (e.clientX > innerWidth * 0.72) show(i + 1);
+  else if (e.clientX < innerWidth * 0.18) show(i - 1);
+});
+</script>
+</body>
+</html>
