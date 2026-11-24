@@ -139,12 +139,33 @@ def build_feature_table(manifest: pd.DataFrame, force: bool = False) -> pd.DataF
         cache = pd.read_csv(FEATURES_CSV)
         if set(manifest["id"]).issubset(set(cache["id"])):
             return cache[cache["id"].isin(manifest["id"])].reset_index(drop=True)
-    rows = []
-    for rec in tqdm(manifest.itertuples(index=False), total=len(manifest), desc="features"):
-        local = SUBSET_DIR / Path(rec.image_path).name
-        feats, meta = extract_one(local)
-        rows.append([rec.id, rec.label, rec.type, rec.is_digital, *meta, *feats])
+    # extração em paralelo (mesma função extract_one; ~19 ms por imagem em 1 núcleo).
+    # Grava em blocos em <DATA>/features_parcial para retomar se a máquina cair no meio.
+    from joblib import Parallel, delayed
+
+    from config import JOBS
+
     cols = ["id", "label", "type", "is_digital", *METADADOS, *FEATURES]
-    tab = pd.DataFrame(rows, columns=cols)
+    parcial = FEATURES_CSV.parent / "features_parcial"
+    parcial.mkdir(exist_ok=True)
+    recs = list(manifest.itertuples(index=False))
+    bloco = 2000
+    partes = []
+    for i in range(0, len(recs), bloco):
+        arq = parcial / f"bloco_{i // bloco:03d}.csv"
+        lote = recs[i:i + bloco]
+        if arq.exists() and not force:
+            parte = pd.read_csv(arq)
+            if list(parte["id"]) == [r.id for r in lote]:
+                partes.append(parte)
+                continue
+        caminhos = [SUBSET_DIR / Path(r.image_path).name for r in lote]
+        saida = Parallel(n_jobs=JOBS, batch_size=32)(
+            delayed(extract_one)(c) for c in tqdm(caminhos, desc=f"features {i}-{i + len(lote)}/{len(recs)}"))
+        rows = [[r.id, r.label, r.type, r.is_digital, *meta, *feats] for r, (feats, meta) in zip(lote, saida)]
+        parte = pd.DataFrame(rows, columns=cols)
+        parte.to_csv(arq, index=False)
+        partes.append(parte)
+    tab = pd.concat(partes, ignore_index=True)
     tab.to_csv(FEATURES_CSV, index=False)
     return tab

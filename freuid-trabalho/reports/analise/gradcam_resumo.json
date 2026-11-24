@@ -1,0 +1,43 @@
+{
+  "limiar": 0.07,
+  "camada": "conv_head",
+  "borda_se_mapa_uniforme": 0.36,
+  "grupos": {
+    "ID_acerto": {
+      "n": 8,
+      "borda_10pct": 0.37967802584171295,
+      "centro": 0.620321974158287,
+      "metade_esquerda": 0.3445211946964264,
+      "metade_direita": 0.6554787755012512,
+      "metade_superior": 0.5247431620955467,
+      "metade_inferior": 0.47525682603009045
+    },
+    "ID_erro": {
+      "n": 6,
+      "borda_10pct": 0.43714840213457745,
+      "centro": 0.5628515928983688,
+      "metade_esquerda": 0.4474942833185196,
+      "metade_direita": 0.5525057365496954,
+      "metade_superior": 0.6413074880838394,
+      "metade_inferior": 0.3586925047760208
+    },
+    "OOD_acerto": {
+      "n": 8,
+      "borda_10pct": 0.3461448699235916,
+      "centro": 0.6538551300764084,
+      "metade_esquerda": 0.4304063692688942,
+      "metade_direita": 0.5695936158299446,
+      "metade_superior": 0.44152454659342766,
+      "metade_inferior": 0.5584754347801208
+    },
+    "OOD_erro": {
+      "n": 8,
+      "borda_10pct": 0.34326957911252975,
+      "centro": 0.6567304208874702,
+      "metade_esquerda": 0.44623496755957603,
+      "metade_direita": 0.5537650212645531,
+      "metade_superior": 0.4156774766743183,
+      "metade_inferior": 0.584322527050972
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "metodo": "logs (tqdm, histórico da CNN) e carimbos de data dos arquivos gravados por cada script; valores aproximados ao segundo",
+  "extracao_features": {
+    "seg": 54,
+    "imagens": 24998,
+    "img_por_seg": 462.9259259259259,
+    "nucleos": 8,
+    "fonte": "features_stdout.txt (tqdm)"
+  },
+  "eda": {
+    "seg": 13.460988521575928,
+    "fonte": "eda.json − features.csv"
+  },
+  "modelagem": {
+    "seg": 502.31030917167664,
+    "fonte": "modelagem.json − início do processo (modelagem_stderr.txt)"
+  },
+  "cnn": {
+    "epocas": 6,
+    "melhor_epoca": 3,
+    "seg_por_epoca": [
+      778.0115048885345,
+      770.1172592639923,
+      769.0608308315277,
+      777.2240245342255,
+      777.1243939399719,
+      770.4095675945282
+    ],
+    "seg_treino": 4641.94758105278,
+    "seg_total": 4783.863723278046,
+    "img_por_seg_treino": 20.868395928337943,
+    "gpu": "NVIDIA RTX 4060 8 GB",
+    "batch": 16,
+    "workers": 0,
+    "fonte": "cnn.json (historico.seg) e carimbos de data"
+  },
+  "gradcam": {
+    "seg": 4.735018491744995,
+    "imagens": 30,
+    "fonte": "carimbos de data em runs\\...\\gradcam"
+  }
+}

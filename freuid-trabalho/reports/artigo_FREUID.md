@@ -1,299 +1,215 @@
-# Detecção de fraude em documentos de identidade com modelos clássicos de aprendizado de máquina
+# Fraude em documentos de identidade: o escore de um modelo vale para um tipo de documento novo?
 
-**Autor:** João Henrique Gomes Dias  
-**Curso:** Bacharelado em IA Aplicada à Gestão Pública — UFG / IIG  
-**Disciplina:** Técnicas de IA I  
-**Dataset:** The FREUID Challenge 2026 – IJCAI-ECAI (Microblink Fraud Lab)
+**Autor:** João Henrique Gomes Dias
+**Curso:** Bacharelado em IA Aplicada à Gestão Pública, UFG / IIG
+**Disciplina:** Técnicas de IA I, prof. Paulo Victor dos Santos, 2026/2
+**Dataset:** The FREUID Challenge 2026, IJCAI-ECAI. Dataset FREUID fornecido pelo Microblink Fraud Lab (Microblink LLC), licença de pesquisa não comercial.
 
-As imagens e os CSVs do dataset não acompanham este texto. A licença da Microblink permite pesquisa não comercial e proíbe redistribuição. Os números abaixo saem dos rótulos e de características numéricas calculadas localmente. Nenhuma imagem de documento é publicada.
+As imagens e os CSVs do dataset não acompanham este texto. Nenhuma fotografia de documento, recorte ou mapa de calor sobre foto aparece aqui. Cada número traz entre colchetes o arquivo JSON de onde saiu, todos em `freuid-trabalho/reports/analise/`.
 
 ## Resumo
 
-Órgãos públicos decidem direitos a partir de documentos de identidade apresentados em cadastros, concursos e conselhos profissionais. Este trabalho trata a verificação como classificação supervisionada: cada exemplo é um par `(x, y)`, em que `x` é um vetor de 73 características da imagem e `y` vale 0 (legítimo) ou 1 (fraude).
+Órgãos públicos concedem benefícios, inscrições em conselho e posse em concurso a partir de documentos de identidade enviados por imagem. A pergunta deste trabalho é se um órgão consegue estimar P(fraude) a partir da imagem com os modelos vistos na disciplina, e se esse escore continua valendo quando o tipo de documento é novo.
 
-O estudo usa os 69.352 rótulos de treino da competição FREUID 2026 e treina os modelos da disciplina em 464 imagens que estão de fato no disco. A validação tem duas perguntas diferentes. Na primeira, o documento já apareceu no treino (validação ID, 76 imagens). Na segunda, um tipo inteiro fica de fora: a carteira de Moçambique (84 imagens).
+O problema é tratado como classificação supervisionada `D = {(x, y)}`: `x` é a imagem resumida em 73 números (ou, na rede neural, a própria imagem), e `y = 1` indica fraude. Foram usadas 24.998 imagens da competição FREUID 2026, de cinco tipos de documento [inventario.json]. A carteira de motorista de Moçambique inteira fica fora do treino e serve de teste fora da distribuição (OOD, 4.816 imagens). Dos outros quatro tipos, 80% treinam (16.145) e 20% formam a validação dentro da distribuição (ID, 4.037) [modelagem.json].
 
-Nos documentos vistos, o gradient boosting alcançou ROC-AUC 0,978, a Random Forest 0,965 e a regressão logística 0,940, contra 0,500 de um baseline que sempre responde a classe majoritária. No documento nunca visto, os três caem para 0,55, 0,51 e 0,55. A checagem de atalho explica o contraste: as mesmas 73 características identificam o tipo do documento com acurácia 1,00, enquanto largura, altura e tamanho do arquivo não separam fraude de documento legítimo (AUC 0,53). O modelo aprende o visual de cada carteira, não uma regra de fraude que viaje para um país novo.
+Nos tipos vistos, a regressão logística alcança ROC-AUC 0,968 e a Random Forest 0,991, contra 0,500 do baseline [modelagem.json]. No tipo novo, as mesmas duas caem para 0,669 e 0,584, e o escore oficial da competição (FREUID, menor é melhor) sobe de 0,109 e 0,042 para 0,892 e 0,867 [modelagem.json]. A checagem de atalho explica o contraste. Não há identificador repetido entre os splits, e metadados de arquivo não separam as classes (AUC 0,55), mas as 73 características identificam o tipo do documento com acurácia de 0,9999 [modelagem.json]. O modelo aprende a fraude *dentro* de cada carteira. Esse aprendizado não se transfere para uma carteira que ele nunca viu. A EfficientNet-B0, no mesmo split, chega a AUC 0,9999 nos tipos vistos e 0,797 no tipo novo [cnn.json]. Ela ordena melhor que os clássicos no OOD (diferença de 0,127 sobre a logística, IC 95% de 0,112 a 0,143) [cnn_diagnostico.json], mas seu escore se desloca: 94% dos legítimos de Moçambique recebem P(fraude) acima de 0,5 [cnn_diagnostico.json], e o limiar escolhido nos tipos vistos manda todas as imagens para conferência.
 
-O resultado serve como triagem auxiliar dentro dos tipos já vistos, com uma pessoa conferindo o caso. Não serve para produção, nem para um tipo de documento ausente do treino. O uso permanece acadêmico e não comercial.
+A conclusão para a gestão pública é que o escore pode ordenar uma fila de conferência humana nos tipos de documento presentes no treino, com limiar definido pelo custo do erro. Para um tipo novo, ele não deve ser usado sem nova amostra rotulada e novo teste.
 
-**Palavras-chave:** classificação supervisionada; regressão logística; Random Forest; fraude documental; validação fora da distribuição; gestão pública.
+**Palavras-chave:** classificação supervisionada; regressão logística; Random Forest; transferência de aprendizado; validação fora da distribuição; fraude documental; gestão pública.
 
 ## 1. Introdução
 
-Cadastros públicos concedem benefícios, inscrições e credenciais. Uma fraude aceita entrega um direito a quem não o tem. Uma recusa errada trava um cidadão legítimo. As duas falhas não custam a mesma coisa, e um limiar único de 0,5 não responde à política do órgão.
+Boa parte do acesso a direitos no setor público passa por um documento de identidade enviado como imagem. É assim no cadastro de um benefício social, na inscrição em um conselho profissional e na posse de um aprovado em concurso. Um documento falso aceito entrega um direito a quem não o tem e abre caminho para fraude em série. Um documento verdadeiro recusado trava um cidadão legítimo e gera recurso, atraso e custo de atendimento.
 
-O professor pediu quatro itens: um dataset ligado à administração pública; a verificação de que existem entradas `X` e rótulos `Y`; a escolha das técnicas de IA e a justificativa; e um artigo que explique o que foi desenvolvido. As respostas, desenvolvidas nas seções seguintes, são estas.
+Os dois erros não custam o mesmo. Por isso, a pergunta útil para um órgão não é só se o modelo acerta, mas também quanto custa errar para cada lado e se o modelo continua acertando no documento que chega amanhã. Esta segunda parte é o centro do trabalho. Um órgão federal recebe carteiras de 27 unidades da federação, de várias gerações e de vários emissores. Um modelo que só funciona nos modelos de carteira que já viu tem uso limitado.
 
-| Item | Resposta |
-|---|---|
-| Dataset | FREUID 2026, fraude em documentos de identidade, uso de pesquisa |
-| Serve para IA? | Sim. `X` é a imagem resumida em 73 números; `Y` é `label` 0/1 |
-| Técnicas | Baseline, regressão logística, KNN, Naive Bayes, árvore, Random Forest e gradient boosting |
-| O que o código fez | Estudo dos rótulos, características, protocolo único, treino, holdout e checagem de atalho |
+A competição FREUID 2026, organizada pelo Microblink Fraud Lab, oferece imagens sintéticas de documentos legítimos e fraudados de cinco tipos, com rótulo binário. O teste privado da competição inclui tipos de documento que não aparecem no treino, o que torna a pergunta deste trabalho a mesma pergunta da competição. Aqui o objetivo não é o leaderboard, e nenhuma submissão foi feita. O objetivo é medir, com os modelos da disciplina e um protocolo honesto, o que o escore permite afirmar.
 
-O objetivo é estimar a probabilidade de fraude e dizer em que condição essa probabilidade pode orientar uma decisão humana.
+O professor pediu quatro itens: um dataset ligado à administração pública, a verificação de que há entradas `X` e rótulos `Y`, as técnicas de IA com justificativa, e um artigo que explique o que foi feito. A resposta curta é: FREUID 2026; sim, `X` é a imagem e `Y` é `label`; regressão logística e Random Forest como núcleo, com os demais modelos da aula e uma rede convolucional como contraste; e este texto.
 
 ## 2. Referencial
 
-### 2.1 Aprendizado supervisionado
+**Aprendizado supervisionado.** O fluxo da aula se repete para todos os modelos: transformar cada imagem em um vetor `X`, separar treino e teste, ajustar com `fit` só no treino, prever com `predict_proba` no teste e medir. A matriz de confusão separa verdadeiro negativo (VN), falso positivo (FP, legítimo marcado como fraude), falso negativo (FN, fraude aceita) e verdadeiro positivo (VP).
 
-Um conjunto supervisionado é `D = {(x_i, y_i)}`. O ajuste (`fit`) usa só o treino. A avaliação usa exemplos que o ajuste não viu. No Scikit-Learn a troca de algoritmo preserva a mesma sequência: separar os dados, pré-processar, treinar, prever, medir.
+**Regressão logística.** Modela `P(y = 1 | x) = σ(w·x + b)`. Ela é sensível à escala: uma coluna medida em milhares domina o gradiente e a regularização penaliza os coeficientes de forma desigual. Por isso as colunas são padronizadas (média 0, desvio 1) dentro de um `Pipeline`, com a média e o desvio calculados só no treino. O coeficiente de cada característica tem sinal e tamanho, o que ajuda a explicar o modelo.
 
-A regressão logística desenha um hiperplano depois de padronizar as colunas. O coeficiente de cada característica tem sinal e magnitude, o que ajuda a explicar o modelo. A árvore de decisão corta o espaço em regras. A Random Forest junta muitas árvores e reduz a variância de uma árvore só. O KNN classifica pelo voto dos vizinhos. O Naive Bayes trata as características como independentes dado o rótulo, o que aqui é uma aproximação, porque bins de histograma são correlacionados. O gradient boosting (`HistGradientBoosting`) soma árvores pequenas em sequência. O baseline da classe majoritária existe para mostrar o que qualquer modelo precisa ultrapassar: chutar sempre “legítimo” acerta cerca de 56% desta amostra e tem AUC 0,50.
+**Árvore e Random Forest.** A árvore divide o espaço com perguntas do tipo "esta coluna é maior que um valor?". Como cada divisão olha uma coluna de cada vez, multiplicar uma coluna por uma constante não muda nenhuma divisão, e padronizar não é necessário. A Random Forest treina centenas de árvores em amostras e subconjuntos de colunas diferentes e tira a média, o que reduz a variância de uma árvore isolada. KNN (voto dos vizinhos, depende de distância e portanto de padronização), Naive Bayes gaussiano e gradient boosting completam a comparação. O boosting entra como contraste e não substitui o núcleo da disciplina.
 
-### 2.2 Métricas e custo
+**Transferência de aprendizado.** Uma rede convolucional pré-treinada no ImageNet já sabe detectar bordas, texturas e formas. O ajuste fino reaproveita esses filtros e treina a rede para a nova tarefa com muito menos dados do que um treino do zero. Aqui foi usada a EfficientNet-B0.
 
-A acurácia esconde o tipo de erro. A matriz de confusão separa verdadeiro negativo, falso positivo (legítimo marcado como fraude), falso negativo (fraude aceita) e verdadeiro positivo.
+**APCER, BPCER e o escore FREUID.** Na norma ISO/IEC 30107-3, APCER é a fração de ataques (fraudes) aceitos e BPCER é a fração de apresentações legítimas recusadas. A competição mede o APCER no ponto em que só 1% dos legítimos é recusado (APCER@1%BPCER), e também a AuDET, a área sob a curva DET, aproximada por `1 − ROC-AUC`. O escore FREUID é `1 − média harmônica(AUC, 1 − APCER@1%BPCER)`, e quanto menor, melhor. Um modelo que só pega fraude recusando muitos legítimos fica com FREUID perto de 1 mesmo com AUC razoável.
 
-A ROC-AUC resume a ordenação dos escores, sem fixar um limiar. O escore da competição combina essa ordenação com a taxa de fraudes pegas quando só 1% dos legítimos pode ser recusado (TPR a 1% de FPR). O APCER nesse ponto é `1 − TPR`. O escore FREUID vale `1` menos a média harmônica entre a AUC e esse TPR. Quanto menor, melhor. Um modelo que só acerta com muitos alarmes falsos fica com FREUID perto de 1, mesmo com AUC moderada.
+## 3. Materiais
 
-Para a decisão do órgão, o limiar minimiza `5·FN + 1·FP`. Deixar uma fraude passar custa cinco vezes mandar um legítimo para conferência. O limiar é escolhido nas previsões out-of-fold do treino, antes de olhar a validação e o documento deixado de fora.
+**População rotulada.** O treino da competição tem 69.352 imagens rotuladas, sem identificador duplicado e sem valor ausente [eda.json]. São 40.005 legítimas (57,7%) e 29.347 fraudes (42,3%) [eda.json]. Os cinco tipos são as carteiras de motorista de Benin, Egito, Guiné e Moçambique e a identidade de Maurício. Egito tem mais fraude (49,6%, intervalo de Wilson de 95% entre 48,8% e 50,4%) do que os outros quatro (40,1% a 40,2%) [eda.json]. A diferença é estatisticamente significativa (qui-quadrado 444,9 com 4 graus de liberdade), mas a associação é fraca (V de Cramér 0,080) [eda.json]. Quase tudo é imagem digital: só 20 são recaptura (impressão fotografada), 14 delas fraude, com taxa de 0,70 e intervalo de Wilson de 0,48 a 0,85 [eda.json]. Vinte casos não sustentam conclusão sobre recaptura.
 
-### 2.3 Generalização e atalho
+**Universo usado.** O manifesto local (`amostra.csv`) lista 24.998 imagens, todas presentes no disco e com tamanho maior que zero, o que corresponde a 36,0% da população [inventario.json]. A amostra reproduz a população: a maior diferença de proporção entre universo e população, considerando rótulo, tipo e recaptura, é de 0,05 ponto percentual [inventario.json]. A taxa de fraude é 42,3% nos dois conjuntos [inventario.json]. As 20 imagens recapturadas estão no universo [inventario.json].
 
-Um modelo pode ir bem no sorteio aleatório e falhar num documento de outro país. Por isso o protocolo guarda um tipo inteiro como teste fora da distribuição (OOD) e ainda repete o experimento deixando cada um dos cinco tipos de fora (leave-one-type-out).
+**Características.** Cada imagem vira 73 números [modelagem.json]. O bloco V1 (64) tem histograma de 16 faixas em cada canal R, G e B, média, desvio, mínimo e máximo de cada canal, e brilho e gradiente da luminância, com a imagem reduzida a 128×128. O bloco de perícia (9) aproxima o que um perito olha: média, desvio e percentil 99 do Error Level Analysis (diferença ao recomprimir um recorte central em JPEG), variância do laplaciano (nitidez), energia de alta frequência, densidade de bordas, entropia do cinza e média e desvio da saturação. Largura, altura e tamanho do arquivo não entram no vetor; são usados só para procurar atalhos.
 
-Também se mede o atalho. Se largura, altura ou tamanho do arquivo já separam as classes, o modelo não está olhando a fraude. Se as características adivinham o país do documento e não a fraude, o número alto no teste aleatório descreve o template da carteira, não um detector portátil.
+## 4. Métodos
 
-## 3. Materiais e métodos
+**Protocolo único.** Clássicos e CNN usam exatamente os mesmos identificadores, definidos em `src/protocolo.py` com semente 42:
 
-### 3.1 Dataset
+1. Moçambique/DL inteiro vai para o teste OOD: 4.816 imagens, 1.933 fraudes [modelagem.json]. O corte foi fixado antes de qualquer resultado, para comparar com o experimento anterior.
+2. Dos outros quatro tipos, 20% estratificados pelo rótulo formam a validação ID (4.037 imagens, 1.730 fraudes) e 80% o treino (16.145, 6.919 fraudes) [modelagem.json].
+3. Nenhum identificador aparece em dois splits [modelagem.json]. Os ids ficam fora do git. Os JSON guardam contagens e um hash de cada split (treino `850957fbd3c9c7ec`, validação ID `4cb990bdc3b272dc`, OOD `580593bf35d8daeb`) [modelagem.json], e o JSON da CNN repete os mesmos hashes [cnn.json].
 
-A competição é sintética: não há pessoa real nem documento oficial verdadeiro. O treino rotulado tem 69.352 linhas, sem identificador duplicado e sem valor ausente. As colunas usadas são `id`, `image_path`, `label`, `is_digital` e `type`.
+**Experimentos com os modelos clássicos** (`src/modelagem.py`). Validação cruzada estratificada em 5 dobras dentro do treino; V1 contra as 73 características; leave-one-type-out (cada tipo vira, uma vez, o documento nunca visto, usando o universo inteiro); curvas de validação de hiperparâmetros e busca em grade da Random Forest com um tipo de fora; curva de aprendizado; importância por permutação; calibração; limiar por custo; e erros por tipo. O holdout final treina nas 16.145 imagens de treino e avalia na validação ID e no OOD.
 
-| Classe | n | % |
-|---|---:|---:|
-| Legítimo (`label = 0`) | 40.005 | 57,7 |
-| Fraude (`label = 1`) | 29.347 | 42,3 |
+**Limiar por custo.** Deixar uma fraude passar custa 5 e mandar um legítimo para conferência custa 1. O limiar minimiza `5·FN + 1·FP` em uma grade de 0,02 a 0,98. Nos clássicos, ele é escolhido com previsões out-of-fold dentro do próprio treino, sem olhar a validação nem o OOD [modelagem.json]. O limiar 0,5 também é reportado.
 
-Cinco tipos aparecem no treino. Egito concentra mais fraude (49,6%) do que Benin, Guiné, Maurício e Moçambique (cerca de 40,1% a 40,2% cada). O qui-quadrado é significativo (`χ² = 444,9`, 4 graus de liberdade, `p` da ordem de `10⁻⁹⁴`), mas a associação é fraca: V de Cramer = 0,080. O país muda pouco a taxa de fraude.
+**CNN** (`src/cnn_protocolo.py`). EfficientNet-B0 pré-treinada no ImageNet, entrada de 384×608 (proporção de um cartão ID-1), AdamW, OneCycle, precisão mista, batch de 16 e aumento de dados que imita recaptura (perspectiva, rotação, variação de cor, desfoque, recompressão JPEG e ruído). Até 10 épocas, com early stopping pela ROC-AUC da validação ID (paciência de 3). Como a validação ID também escolhe a época, o limiar de custo da CNN é escolhido nela, e os números ID da CNN no limiar de custo são otimistas; os OOD não são afetados [cnn.json]. Pesos, previsões e log ficam em `C:\freuid\runs\ood_efficientnet_b0\`, fora do repositório.
 
-Quase tudo é digital. Só 20 imagens são recaptura (`is_digital = 0`), 14 delas fraude. O teste exato de Fisher dá razão de chances 0,31 e `p = 0,021`, com intervalo largo. Vinte casos não sustentam um detector de recaptura.
+**Métricas.** Sempre com `y = 1` sendo fraude: ROC-AUC, AuDET, APCER@1%BPCER, FREUID, matriz de confusão, F1 e recall de fraude.
 
-### 3.2 Amostra que entrou no treino
+**Regra contra números altos demais.** Se a AUC passar de 0,98, o resultado só é aceito depois de procurar vazamento de identificador, atalho por metadado de arquivo e características que codificam o tipo do documento (Seção 5.5).
 
-O arquivo completo tem dezenas de gigabytes. No disco deste trabalho há 464 JPEGs não vazios, todos presentes no manifesto e todos digitais. Isso é 0,67% da população rotulada. A taxa de fraude da amostra é 43,5%, perto dos 42,3% da população. A participação de cada país também fica próxima: Egito 26,3% na amostra contra 22,9% na população; os outros quatro ficam entre 17% e 20%.
+## 5. Resultados
 
-| Tipo | n | fraudes |
-|---|---:|---:|
-| Egito / DL | 122 | 64 |
-| Benin / DL | 92 | 39 |
-| Guiné / DL | 85 | 32 |
-| Moçambique / DL | 84 | 33 |
-| Maurício / ID | 81 | 34 |
-| Total | 464 | 202 |
+### 5.1 Exploração
 
-Não há recaptura nessa amostra. Conclusões sobre *print-and-capture* ficam fora do alcance do treino.
+No espaço das 73 características, a análise de componentes principais precisa de 10 componentes para explicar 90% da variância [eda.json]. A silhueta calculada pelo rótulo é 0,017, e pelo tipo de documento é 0,477 [eda.json]. No gráfico dos dois primeiros componentes (`reports/figs/eda_pca.png`), os cinco países formam nuvens separadas, e fraude e legítimo se misturam dentro de cada nuvem. Das 73 características, 57 passam no teste univariado com correção de Bonferroni [eda.json]. A mais forte isoladamente é a faixa mais escura do histograma verde (`hist_G_00`, AUC univariada 0,767) [eda.json]. Largura, altura e tamanho têm AUC univariada entre 0,48 e 0,50 [eda.json].
 
-### 3.3 Características
+### 5.2 Validação cruzada no treino
 
-Cada imagem vira 73 números, em duas famílias.
+Cinco dobras, 16.145 imagens [modelagem.json]:
 
-O bloco V1 tem 64 características: histograma de 16 bins em R, G e B, média, desvio, mínimo e máximo de cada canal, e brilho e gradiente da luminância. A imagem entra redimensionada para 128×128.
-
-O bloco de perícia acrescenta 9 características, calculadas para aproximar o que um perito olha sem deep learning: média, desvio e percentil 99 do Error Level Analysis (recompressão JPEG de um recorte central), variância do laplaciano, energia fora do centro do espectro, densidade de bordas, entropia do cinza e média e desvio da saturação.
-
-Largura, altura e tamanho em KB entram só na checagem de atalho. Não entram no vetor dos classificadores.
-
-No estudo univariado da amostra, 10 características passam o limiar de Bonferroni. A mais forte é o primeiro bin do histograma verde (`hist_G_00`, AUC 0,749, d de Cohen 0,70). Em seguida vêm bins escuros de azul e vermelho e o desvio da saturação. Trinta pares de características têm correlação acima de 0,90, em 2.628 pares possíveis: há redundância, e modelos lineares precisam de regularização.
-
-A PCA precisa de 9 componentes para 90% da variância e de 14 para 95%. A silhueta por classe (fraude contra legítimo) é 0,014. A silhueta por tipo de documento é 0,484. No plano dos dois primeiros componentes, os países se separam e as classes se misturam.
-
-Largura, altura e tamanho não diferem entre fraude e legítimo (Mann–Whitney, `p` de 0,62, 0,43 e 0,86). A AUC univariada desses três metadados fica entre 0,48 e 0,50.
-
-### 3.4 Protocolo
-
-O universo é a interseção do manifesto com os 464 JPEGs. A semente é 42.
-
-1. Moçambique/DL inteiro vai para o teste OOD (84 imagens, 33 fraudes). Esse corte foi definido antes de olhar o resultado.
-2. Dos outros quatro tipos, 20% formam a validação ID, estratificada pelo rótulo (76 imagens, 34 fraudes). O resto é treino (304 imagens, 135 fraudes, 169 legítimos).
-3. Nenhum `id` aparece em dois splits. Os identificadores ficam fora do git; o relatório guarda só contagens e um hash.
-
-A validação cruzada, a comparação de características, as curvas de hiperparâmetro e a curva de aprendizado usam somente as 304 imagens de treino. O leave-one-type-out usa as 464, porque precisa dos cinco tipos, e é lido à parte. O holdout final treina nas 304 e avalia nos dois testes.
-
-### 3.5 Modelos
-
-| Modelo | Ajuste usado no comparativo |
-|---|---|
-| Baseline | Classe majoritária |
-| Regressão logística | Padronização, `class_weight=balanced`, `max_iter=5000` |
-| KNN | Padronização, 15 vizinhos, peso pela distância |
-| Naive Bayes | Gaussiano, depois da padronização |
-| Árvore | Profundidade 8, folha mínima 5, classes balanceadas |
-| Random Forest | 400 árvores, folha mínima 2, classes balanceadas |
-| Gradient boosting | 300 iterações, taxa 0,05, classes balanceadas |
-
-A curva de validação percorre `C` da logística, `k` do KNN e a profundidade da árvore, com 5 folds no treino. A Random Forest passa por uma grade de 18 combinações (`max_depth` em {6, 12, sem limite}, `min_samples_leaf` em {1, 3, 8}, `max_features` em {sqrt, 0,5}), com leave-one-group-out nos quatro tipos do treino. Essa grade não vê Moçambique.
-
-O código está em `freuid-trabalho/src/`. O estudo exploratório é `eda_completa.py`. O treino e as figuras são `modelagem.py`. Os números brutos estão em `reports/analise/modelagem.json`.
-
-## 4. Resultados
-
-### 4.1 Validação cruzada no treino
-
-Cinco folds estratificados, 304 imagens, 73 características.
-
-| Modelo | ROC-AUC | Acurácia | F1 | Acurácia balanceada |
+| Modelo | ROC-AUC | Acurácia | Recall de fraude | F1 |
 |---|---:|---:|---:|---:|
-| Baseline | 0,500 ± 0,000 | 0,556 | 0,000 | 0,500 |
-| KNN | 0,829 ± 0,046 | 0,793 | 0,708 | 0,770 |
-| Naive Bayes | 0,875 ± 0,032 | 0,783 | 0,741 | 0,775 |
-| Árvore de decisão | 0,888 ± 0,027 | 0,839 | 0,826 | 0,840 |
-| Regressão logística | 0,913 ± 0,014 | 0,849 | 0,821 | 0,842 |
-| Random Forest | 0,951 ± 0,024 | 0,882 | 0,851 | 0,870 |
-| Gradient boosting | 0,956 ± 0,019 | 0,878 | 0,851 | 0,869 |
+| Baseline (classe majoritária) | 0,500 | 0,571 | 0,000 | 0,000 |
+| Naive Bayes | 0,878 | 0,822 | 0,727 | 0,778 |
+| Regressão logística | 0,964 | 0,919 | 0,855 | 0,901 |
+| KNN | 0,973 | 0,922 | 0,826 | 0,901 |
+| Árvore de decisão | 0,979 | 0,953 | 0,909 | 0,944 |
+| Random Forest | 0,991 | 0,964 | 0,921 | 0,957 |
+| Gradient boosting | 0,993 | 0,965 | 0,930 | 0,958 |
 
-Todos os modelos da disciplina passam o baseline. A logística é a mais estável entre os modelos lineares (desvio 0,014). Floresta e boosting lideram a ordenação. O F1 do baseline é zero porque ele nunca prevê fraude.
+O desvio entre dobras é de no máximo 0,004 na AUC [modelagem.json]. Com 16 mil imagens a estimativa é estável. As nove características de perícia acrescentam informação: a AUC sobe de 0,930 para 0,964 na logística e de 0,957 para 0,991 na Random Forest quando se passa de V1 para as 73 [modelagem.json]. A curva de aprendizado da Random Forest começa em 0,985 com 1.291 imagens e chega a 0,991 com 12.916 [modelagem.json]: mais imagens dos mesmos tipos já quase não mudam o número interno. A Random Forest tem AUC de treino 1,00 em todos os tamanhos, ou seja, memoriza o treino, e ainda assim a validação se mantém [modelagem.json].
 
-Entre logística e floresta, a floresta tem a maior AUC de validação cruzada. As figuras de matriz, limiar e importância usam esse modelo. O boosting entra na mesma tabela porque o código o treinou no mesmo protocolo; ele não substitui os dois modelos centrais da disciplina.
+### 5.3 Um tipo de documento de fora de cada vez
 
-### 4.2 O que as nove características de perícia acrescentam
+AUC de cada modelo quando o tipo da coluna fica inteiramente fora do treino [modelagem.json]:
 
-A mesma validação cruzada, no mesmo treino, compara o bloco V1 (64) com o vetor completo (73).
+| Modelo | Benin | Egito | Guiné | Maurício | Moçambique | Média |
+|---|---:|---:|---:|---:|---:|---:|
+| Regressão logística | 0,500 | 0,859 | 0,496 | 0,635 | 0,670 | 0,632 |
+| KNN | 0,500 | 0,674 | 0,821 | 0,738 | 0,595 | 0,665 |
+| Naive Bayes | 0,724 | 0,815 | 0,859 | 0,635 | 0,535 | 0,714 |
+| Árvore de decisão | 0,500 | 0,715 | 0,500 | 0,618 | 0,500 | 0,567 |
+| Random Forest | 0,743 | 0,827 | 0,966 | 0,967 | 0,603 | 0,821 |
+| Gradient boosting | 0,756 | 0,827 | 0,985 | 0,883 | 0,591 | 0,808 |
 
-| Modelo | AUC V1 | AUC completo |
-|---|---:|---:|
-| Regressão logística | 0,876 ± 0,035 | 0,913 ± 0,014 |
-| Random Forest | 0,894 ± 0,020 | 0,951 ± 0,024 |
-| Gradient boosting | 0,900 ± 0,027 | 0,956 ± 0,019 |
+A média esconde a variação. A Random Forest transfere bem para Guiné e Maurício (0,97), razoavelmente para Egito, mal para Benin e quase nada para Moçambique. A logística chega a 0,500 em Benin e 0,496 em Guiné, o que equivale ao acaso. A busca em grade da Random Forest com um tipo de fora (18 combinações) escolheu profundidade 12, `sqrt` das colunas por divisão e folha mínima 8, com AUC média de 0,875 [modelagem.json]. Esse valor ainda está bem abaixo dos 0,991 do sorteio aleatório.
 
-ELA, nitidez, frequência e saturação sobem a AUC em cerca de 0,04 a 0,06 e, na logística, também reduzem o desvio. O histograma sozinho já separa parte dos casos. A perícia não é enfeite.
+### 5.4 Holdout final, ID e OOD
 
-### 4.3 Documento deixado de fora
+**Tabela única de comparação**, gerada por `src/comparacao.py` a partir de `modelagem.json` e `cnn.json` [comparacao.csv]:
 
-Média das cinco rodadas em que um tipo inteiro é o teste:
+| Modelo | Split | n | ROC-AUC | AuDET | APCER@1%BPCER | FREUID | Recall no limiar de custo |
+|---|---|---:|---:|---:|---:|---:|---:|
+| Regressão logística | validação ID | 4.037 | 0,968 | 0,032 | 0,175 | 0,109 | 0,935 |
+| Random Forest | validação ID | 4.037 | 0,991 | 0,009 | 0,073 | 0,042 | 0,964 |
+| Gradient Boosting | validação ID | 4.037 | 0,993 | 0,007 | 0,069 | 0,039 | 0,967 |
+| Regressão logística | OOD (Moçambique) | 4.816 | 0,669 | 0,331 | 0,942 | 0,892 | 0,323 |
+| Random Forest | OOD (Moçambique) | 4.816 | 0,584 | 0,416 | 0,925 | 0,867 | 1,000 |
+| Gradient Boosting | OOD (Moçambique) | 4.816 | 0,541 | 0,459 | 1,000 | 1,000 | 1,000 |
+| EfficientNet-B0 | validação ID | 4.037 | 0,9999 | 0,0001 | 0,001 | 0,0003 | 0,998 |
+| EfficientNet-B0 | OOD (Moçambique) | 4.816 | 0,796 | 0,203 | 0,501 | 0,387 | 1,000 |
 
-| Modelo | AUC média | FREUID médio |
-|---|---:|---:|
-| Baseline | 0,500 | 1,000 |
-| Árvore de decisão | 0,617 | 0,771 |
-| Naive Bayes | 0,683 | 0,766 |
-| Regressão logística | 0,714 | 0,639 |
-| Gradient boosting | 0,752 | 0,530 |
-| KNN | 0,765 | 0,762 |
-| Random Forest | 0,783 | 0,357 |
+O gradient boosting aparece só como contraste. Recall de 1,000 no OOD significa que o modelo marcou todas as imagens como fraude no limiar de custo herdado; não é acerto.
 
-A média esconde tipos fáceis e tipos difíceis. AUC da Random Forest em cada documento deixado de fora:
+Matriz de confusão no limiar de custo, holdout dos clássicos [modelagem.json]:
 
-| Tipo deixado de fora | Logística | Random Forest | Boosting |
-|---|---:|---:|---:|
-| Benin | 0,672 | 0,638 | 0,724 |
-| Egito | 0,843 | 0,788 | 0,742 |
-| Guiné | 0,863 | 0,952 | 0,785 |
-| Maurício | 0,644 | 0,981 | 0,925 |
-| Moçambique | 0,548 | 0,556 | 0,583 |
+| Modelo | Split | Limiar | VN | FP | FN | VP | Custo |
+|---|---|---:|---:|---:|---:|---:|---:|
+| Regressão logística | ID | 0,26 | 1.845 | 462 | 113 | 1.617 | 1.027 |
+| Random Forest | ID | 0,22 | 2.062 | 245 | 62 | 1.668 | 555 |
+| Regressão logística | OOD | 0,26 | 2.421 | 462 | 1.308 | 625 | 7.002 |
+| Random Forest | OOD | 0,22 | 0 | 2.883 | 0 | 1.933 | 2.883 |
 
-Guiné e Maurício transferem. Benin transfere pouco. Moçambique fica no acaso para todos os modelos. A escolha prévia de Moçambique como OOD oficial caiu no pior caso, não num caso médio.
+No limiar 0,5 a Random Forest tem, na validação ID, recall de fraude de 0,920 e apenas 5 falsos positivos em 2.307 legítimos [modelagem.json]. O limiar de custo (0,22) troca 240 alarmes falsos a mais por 76 fraudes a menos passando, e o custo total cai [modelagem.json]. No OOD o mesmo limiar marca as 4.816 imagens de Moçambique como fraude: recall 1,00 e nenhum legítimo aceito [modelagem.json]. Isso não é detecção, é recusar o país inteiro. A regressão logística, no OOD, deixa passar 1.308 das 1.933 fraudes (recall 0,323) [modelagem.json].
 
-### 4.4 Hiperparâmetros e curva de aprendizado
+O erro de calibração da Random Forest é 0,017 na validação ID e 0,500 no OOD [modelagem.json]: a probabilidade estimada deixa de significar probabilidade no tipo novo. Na validação ID, os erros também não são uniformes por tipo: com o limiar de custo, a Random Forest deixa passar 15,0% das fraudes de Benin e manda para conferência 38,4% dos legítimos de Benin, contra menos de 1% nos dois indicadores em Guiné e Maurício [modelagem.json].
 
-No treino, o melhor `C` da logística ficou em 0,72 (AUC de validação 0,912). O melhor `k` foi 5 (AUC 0,863), abaixo dos 15 vizinhos do comparativo principal: com 304 linhas, uma vizinhança menor ordena melhor. A árvore prefere profundidade 4 (AUC 0,919), mais rasa que o 8 usado na tabela geral. A grade da floresta, avaliada deixando um dos quatro tipos de treino de fora, escolheu profundidade livre, metade das características por divisão e folha mínima 1, com AUC 0,845. Esse 0,845 não é o teste de Moçambique.
+**CNN.** O treino parou na época 6 por early stopping. A melhor AUC da validação ID foi na época 3, e esses pesos foram usados [cnn.json]. Cada época levou cerca de 13 minutos na RTX 4060 [cnn.json].
 
-A curva de aprendizado, ainda só no treino, sobe até o fim da amostra:
+| EfficientNet-B0 | Limiar | VN | FP | FN | VP | Recall | Custo |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Validação ID | 0,50 | 2.306 | 1 | 8 | 1.722 | 0,995 | 41 |
+| Validação ID | 0,07 (custo) | 2.304 | 3 | 3 | 1.727 | 0,998 | 18 |
+| OOD (Moçambique) | 0,50 | 162 | 2.721 | 19 | 1.914 | 0,990 | 2.816 |
+| OOD (Moçambique) | 0,07 (custo) | 0 | 2.883 | 0 | 1.933 | 1,000 | 2.883 |
 
-| Imagens de treino | AUC logística | AUC floresta | AUC boosting |
-|---|---:|---:|---:|
-| 24 | 0,715 | 0,705 | 0,500 |
-| 118 | 0,873 | 0,925 | 0,894 |
-| 243 | 0,913 | 0,949 | 0,955 |
+Fonte: [cnn.json]. Nos tipos vistos, a CNN erra 6 de 4.037 imagens no limiar de custo. A AUC é de pelo menos 0,9999 em cada um dos quatro tipos separadamente [cnn_diagnostico.json]. No tipo novo ela ordena melhor que os clássicos: AUC 0,797, FREUID 0,387 e APCER@1%BPCER de 0,501 [cnn.json]. A diferença de AUC em relação à regressão logística, com bootstrap pareado de 1.000 reamostragens dos mesmos ids, é de 0,127 (IC 95% de 0,112 a 0,143), e em relação à Random Forest é de 0,212 (IC 95% de 0,195 a 0,231) [cnn_diagnostico.json].
 
-A floresta memoriza o treino (AUC de treino 1,00 em todos os tamanhos) e mesmo assim a validação continua subindo. Mais imagens dos mesmos tipos devem melhorar o número interno. Isso não corrige, por si, o fracasso em Moçambique: o problema ali é o template novo, não só o tamanho.
+O escore, porém, não se transfere com a mesma escala. Na validação ID, a mediana de P(fraude) dos legítimos é 0,013; em Moçambique é 0,786, e 94,4% dos legítimos ficam acima de 0,5 [cnn_diagnostico.json]. Por isso, tanto o limiar 0,5 quanto o limiar de custo (0,07) mandam quase todas as imagens do tipo novo para conferência (Figura `reports/figs/cnn_matriz.png`). A ordenação existe, mas o ponto de corte precisa ser outro. Como diagnóstico, e usando rótulos do próprio OOD (fora do protocolo), o corte que daria 1% de BPCER em Moçambique seria 0,964, e nele a CNN pegaria 49,9% das fraudes [cnn_diagnostico.json]. Um órgão só chegaria a esse corte com uma amostra rotulada do tipo novo. As curvas ROC e DET estão em `reports/figs/cnn_roc_det.png`.
 
-### 4.5 Holdout final
+### 5.5 Checagem de atalho
 
-Treino nas 304 imagens. Limiar de custo escolhido fora do teste.
+Três AUCs passaram de 0,98 na validação ID: árvore (0,981), Random Forest (0,991) e gradient boosting (0,993) [modelagem.json]. A regra do protocolo manda procurar a causa:
 
-Validação ID, tipos vistos, n = 76 (34 fraudes):
-
-| Modelo | AUC | AP | FREUID | APCER a 1% | Limiar | VN | FP | FN | VP | Custo |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Baseline | 0,500 | 0,447 | 1,000 | 1,000 | 0,50 | 42 | 0 | 34 | 0 | 170 |
-| Naive Bayes | 0,900 | 0,910 | 0,209 | 0,294 | 0,02 | 29 | 13 | 5 | 29 | 38 |
-| KNN | 0,901 | 0,916 | 0,247 | 0,353 | 0,12 | 7 | 35 | 0 | 34 | 35 |
-| Regressão logística | 0,940 | 0,949 | 0,122 | 0,176 | 0,12 | 16 | 26 | 1 | 33 | 31 |
-| Árvore de decisão | 0,965 | 0,964 | 0,062 | 0,088 | 0,02 | 37 | 5 | 2 | 32 | 15 |
-| Random Forest | 0,965 | 0,967 | 0,129 | 0,206 | 0,19 | 22 | 20 | 0 | 34 | 20 |
-| Gradient boosting | 0,978 | 0,975 | 0,124 | 0,206 | 0,02 | 33 | 9 | 0 | 34 | 9 |
-
-No ponto de operação, o boosting zera os falsos negativos e manda 9 legítimos para conferência (custo 9). A logística deixa passar 1 fraude e marca 26 legítimos (custo 31). A árvore tem o melhor FREUID (0,062): é a que ainda pega fraude quando quase não se pode recusar legítimo. Com 76 casos, a ordem fina entre árvore, floresta e boosting não deve ser lida como ranking estável. Os três estão no mesmo patamar, longe do baseline.
-
-OOD, Moçambique, n = 84 (33 fraudes):
-
-| Modelo | AUC | AP | FREUID | APCER a 1% | VN | FP | FN | VP | Custo |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Baseline | 0,500 | 0,393 | 1,000 | 1,000 | 51 | 0 | 33 | 0 | 165 |
-| Random Forest | 0,510 | 0,385 | 1,000 | 1,000 | 0 | 51 | 0 | 33 | 51 |
-| KNN | 0,540 | 0,406 | 1,000 | 1,000 | 0 | 51 | 0 | 33 | 51 |
-| Gradient boosting | 0,547 | 0,421 | 1,000 | 1,000 | 0 | 51 | 0 | 33 | 51 |
-| Regressão logística | 0,550 | 0,471 | 0,943 | 0,970 | 11 | 40 | 2 | 31 | 50 |
-| Naive Bayes | 0,562 | 0,423 | 1,000 | 1,000 | 12 | 39 | 2 | 31 | 49 |
-| Árvore de decisão | 0,500 | 0,393 | 1,000 | 1,000 | 0 | 51 | 0 | 33 | 51 |
-
-No documento novo a ordenação desaparece. O limiar herdado do treino faz a floresta, o boosting, o KNN e a árvore classificarem as 84 imagens como fraude. O custo cai de 165 para cerca de 50 só porque nenhuma fraude passa — e nenhum legítimo passa também. Isso não é triagem. É recusar o país inteiro.
-
-### 4.6 Importância e atalhos
-
-Na validação ID, a permutação que mais derruba a AUC da floresta está nos bins escuros dos histogramas (`hist_G_00` 0,017, `hist_B_00` 0,015, `hist_R_00` 0,010) e no desvio da saturação e no desvio do ELA (0,010 e 0,008). Somadas por família, perícia e histograma verde lideram. Nenhuma característica sozinha carrega o modelo: a queda de cada uma é pequena, como se espera com 73 colunas correlacionadas.
-
-A checagem de atalho, no mesmo protocolo:
-
-| Teste | Resultado |
+| Verificação | Resultado |
 |---|---|
-| Identificadores repetidos entre splits | 0 |
-| AUC usando só largura, altura e tamanho | 0,532 na validação ID; 0,567 no OOD |
-| AUC usando só o tipo do documento, na validação ID | 0,487 |
-| Acurácia ao prever o tipo a partir das 73 características | 1,00 (chute do tipo mais comum: 0,26) |
-| Algum holdout com AUC acima de 0,98 | Não |
+| Identificadores repetidos entre treino, validação ID e OOD | 0, 0 e 0 |
+| AUC usando só largura, altura e tamanho do arquivo | 0,550 (ID) e 0,534 (OOD) |
+| AUC usando só o tipo do documento (ID) | 0,534 |
+| Acurácia ao prever o tipo a partir das 73 características | 0,9999 (chance: 0,229) |
 
-Não houve vazamento de identificador. Metadado de arquivo não resolve a fraude. O tipo, sozinho, também não: dentro dos países vistos, saber o país não diz se o documento é falso. As 73 características, porém, acertam o país em todas as imagens. O vetor é uma impressão digital do template. A AUC alta no teste aleatório convive com esse fato. A AUC de 0,51 em Moçambique é a consequência.
+Fonte: [modelagem.json]. Não houve vazamento de identificador nem de arquivo, e o tipo do documento sozinho não prevê fraude. O número alto, portanto, não é truque de split. Mas as 73 características são uma impressão digital do modelo de carteira. Dentro de cada carteira, o histograma e o ELA de uma imagem fraudada se afastam do padrão daquela carteira, e o modelo aprende esse desvio. A importância por permutação aponta para o desvio do ELA (queda de AUC de 0,021) e para as faixas escuras dos histogramas [importancia_permutacao.csv]. O desvio aprendido só existe em relação a um padrão conhecido. Em Moçambique o padrão é outro, e a referência desaparece.
 
-Nenhum holdout passou de 0,98. O 0,978 do boosting na validação ID é alto para 76 imagens e deve ser lido junto com o desvio da validação cruzada (0,019) e com o colapso OOD.
+**A CNN também passou de 0,98 no ID.** Os identificadores são os mesmos dos clássicos, conferidos pelo hash de cada split [cnn.json], e não há sobreposição entre conjuntos [modelagem.json]. A AUC fica acima de 0,9999 em cada tipo isoladamente [cnn_diagnostico.json], então o resultado não vem de reconhecer o tipo e usar a taxa de fraude do tipo. O que não dá para excluir é que a fraude sintética da competição deixe marcas regulares de geração dentro de cada modelo de carteira, que a rede aprende muito bem e que mudam quando o modelo de carteira muda. A queda para 0,797 no OOD é compatível com essa leitura.
 
-## 5. Discussão
+**Onde a CNN olha (Grad-CAM).** O Grad-CAM da última camada convolucional foi calculado em 30 imagens: 8 acertos sorteados e os únicos 6 erros da validação ID, e 8 acertos e 8 erros do OOD, no limiar de custo. As sobreposições ficam apenas em `C:\freuid\runs\ood_efficientnet_b0\gradcam\`, por causa da licença. Nos acertos da validação ID, o mapa se concentra em regiões do rosto, como o retrato secundário pequeno de segurança e a base do retrato principal, e em blocos de campos de texto. Essas são regiões plausíveis de troca de rosto e de edição de dados. Nos casos de Moçambique, o mapa é mais espalhado pela carteira, com alguma ênfase na base do retrato e numa faixa de texto inferior. A fração do mapa na borda externa de 10% da imagem foi de 0,38 nos acertos ID, 0,44 nos erros ID e 0,35 e 0,34 no OOD, contra 0,36 se o mapa fosse uniforme [gradcam_resumo.json]. Não há sinal de que a rede se apoie na borda ou no fundo da foto. Com 30 imagens, isso é descrição qualitativa. Não prova que a rede detecta o artefato da fraude em vez de uma assinatura do gerador do dataset.
 
-O dataset serve para a disciplina. Existe `X`, existe `Y`, e os algoritmos da aula produzem uma probabilidade que, nos tipos vistos, ordena fraude acima de legítimo. A regressão logística já entrega AUC 0,94 na validação ID e permanece interpretável. A floresta e o boosting ganham alguns pontos de AUC e, no limiar de custo, zeram o falso negativo dessa amostra pequena.
+## 6. Discussão
 
-O mesmo experimento mostra o limite. Um órgão que cadastra um tipo de documento ausente do treino não pode reutilizar o escore. Em Moçambique o modelo não ordena: acusa todo mundo ou, se o limiar for relaxado até o ponto da competição (1% de recusa de legítimos), quase não pega fraude (APCER entre 0,97 e 1,00). A média do leave-one-type-out (AUC 0,78 na floresta) não autoriza o uso geral. Ela é a mistura de Guiné e Maurício, que transferem, com Benin e Moçambique, que não transferem.
+**Por que o OOD cai.** Os dados mostram três coisas ao mesmo tempo. Dentro dos tipos vistos, as características separam fraude de legítimo muito bem (AUC 0,991 na Random Forest). As mesmas características identificam o tipo com acurácia de 0,9999. E, quando o tipo é novo, a ordenação se perde (AUC 0,584) [modelagem.json]. A leitura mais simples é que o modelo aprende "o que é anormal para esta carteira". Para uma carteira nova, com outro fundo, outras cores e outro leiaute, tudo é anormal, ou nada é. O leave-one-type-out mostra que a transferência depende de quão parecida é a carteira nova com as do treino: Guiné e Maurício se beneficiam, Moçambique e Benin não [modelagem.json].
 
-Para a gestão pública, o desenho honesto é este. O escore ordena uma fila de conferência humana apenas para tipos presentes no treino. O limiar sai da política de custo, não de 0,5. Um tipo novo exige amostra rotulada nova e um teste OOD antes de qualquer uso. O modelo não substitui o servidor que olha o documento.
+**Por que 1% de BPCER é o ponto que importa.** Um órgão que recebe 100 mil cadastros com 1% de legítimos barrados já manda mil cidadãos para atendimento presencial. Esse é o limite operacional plausível. Nesse ponto, a Random Forest deixa passar 7,3% das fraudes nos tipos vistos e 92,5% no tipo novo [modelagem.json]. A AUC sozinha esconde essa diferença: uma AUC de 0,58 parece "melhor que o acaso", mas, no ponto em que o órgão pode operar, quase todas as fraudes passam.
 
-Limitações que mudam a leitura do número:
+**Humano no loop.** O uso defensável é ordenar a fila de conferência: o servidor olha primeiro os casos com escore mais alto, e o limiar de custo decide quantos casos vão para a fila. O modelo não deve recusar ninguém sozinho. Isso vale ainda mais para um tipo de documento ausente do treino: ali a probabilidade calculada deixa de significar probabilidade (erro de calibração de 0,500), e a decisão volta inteira para a pessoa.
 
-- 464 imagens, 0,67% do treino rotulado, todas digitais. Recaptura, que é um dos três ataques da competição, não foi aprendida.
-- Cinco países apenas, e o ataque é sintético. O comportamento em documento brasileiro real não foi medido.
-- As características são globais. Uma edição pequena pode se perder no histograma, e o histograma também é o que identifica o país.
-- A validação ID tem 76 imagens. Diferenças de 0,01 na AUC entre árvore, floresta e boosting cabem no acaso.
-- A CNN com EfficientNet está escrita para o ambiente com GPU da competição e não foi executada aqui. Os números deste artigo são só dos modelos clássicos.
+**Limites.**
+- O dataset é sintético e tem cinco tipos estrangeiros. O comportamento em documentos brasileiros reais não foi medido.
+- Recaptura (impressão fotografada) tem 20 exemplos. Um dos ataques que a competição destaca não pode ser aprendido nem avaliado aqui.
+- O teste OOD é um único tipo. A variação do leave-one-type-out (de 0,60 a 0,97 na Random Forest) mostra que outro tipo novo poderia dar um número muito diferente.
+- A CNN foi treinada uma vez, com uma semente e uma configuração. Com 4.816 imagens no OOD, a vantagem de ordenação da EfficientNet sobre os clássicos tem intervalo de confiança estreito [cnn_diagnostico.json], mas vale para este tipo e esta execução. Ela não autoriza afirmar que a CNN generaliza para qualquer tipo novo. O limiar de custo da CNN foi escolhido na validação ID, que também escolheu a época, então seus números ID no limiar de custo são otimistas.
+- As características são globais. Uma edição pequena em uma região do documento pode se diluir no histograma.
+- Os experimentos anteriores deste trabalho são registro histórico e não entram nas tabelas acima. O primeiro chegou a AUC de 0,889 na regressão logística com 109 imagens de validação [reports/metrics.csv]. O segundo usou 464 imagens, com 76 na validação ID e 84 no OOD, e obteve AUC de 0,940 (ID) e 0,550 (OOD) na logística [historico_n464/results.md]. Com amostras desse tamanho, nenhuma diferença fina entre modelos podia ser afirmada, mas a queda no OOD já aparecia. Com 24.998 a estimativa interna é estável, mas a conclusão sobre OOD continua apoiada em um único tipo.
 
-A licença fecha o resto. Pesquisa não comercial, citação obrigatória, sem republicar imagens, sem levar o modelo a produto. Apagar os arquivos ao fim do trabalho faz parte da condição de uso.
+**Licença.** O dataset é de uso acadêmico e não comercial. Nenhuma imagem foi publicada, nenhum dado foi redistribuído, os pesos do modelo ficam fora do repositório, e o modelo não pode ser usado em produção, inclusive em sistemas de órgãos públicos. Os dados devem ser apagados ao fim do trabalho.
 
-## 6. Conclusão
+## 7. Conclusão
 
-Fraude documental, neste dataset, é um problema supervisionado bem formado. No recorte local, regressão logística, árvore, Random Forest e gradient boosting separam fraude de documento legítimo quando o tipo da carteira já apareceu no treino. A melhor operação nesse recorte, pelo custo `5·FN + 1·FP`, foi o gradient boosting: AUC 0,978, nenhuma fraude perdida e nove legítimos encaminhados à revisão, em 76 imagens.
+Com os modelos da disciplina, um órgão público consegue estimar P(fraude) a partir da imagem do documento nos tipos de documento presentes no treino. A regressão logística, interpretável e simples, chega a AUC 0,968, e a Random Forest a 0,991, ambas avaliadas em 4.037 imagens que não participaram do ajuste [modelagem.json]. Com limiar definido pelo custo do erro, a Random Forest deixa passar 62 de 1.730 fraudes e manda 245 de 2.307 legítimos para conferência [modelagem.json].
 
-Esse desempenho não se sustenta fora dos tipos vistos. Com Moçambique inteiramente de fora, a AUC volta para cerca de 0,55 e o escore da competição desaba. As características identificam o modelo do documento com acurácia perfeita e quase não usam o tamanho do arquivo. O classificador aprendeu aparência de carteira junto com o sinal de fraude.
+Esse escore não vale para um tipo de documento novo. Com Moçambique inteiro fora do treino, a AUC cai para 0,669 e 0,584, o escore FREUID fica perto de 0,9 e a calibração se perde [modelagem.json]. A checagem de atalho mostra por quê: as características identificam a carteira, e o modelo aprende o desvio em relação a cada carteira conhecida. A EfficientNet-B0 reduz a queda: no tipo novo, ela ainda ordena (AUC 0,797, cerca de metade das fraudes pegas a 1% de BPCER) [cnn.json], mas a escala do escore muda tanto que o limiar dos tipos conhecidos deixa de servir [cnn_diagnostico.json].
 
-O trabalho entrega o que a disciplina pediu: dataset justificado, formulação `D = {(x, y)}`, técnicas da aula comparadas contra um baseline, e o relato do que o código mediu, inclusive o resultado negativo. O uso proposto é apoio à decisão humana, restrito aos tipos treinados, sob a licença acadêmica da Microblink.
+A resposta à pergunta do trabalho, portanto, é: sim para triagem assistida nos tipos conhecidos, com pessoa conferindo; não para um tipo novo sem nova amostra rotulada e novo teste fora da distribuição.
 
 ## Referências
 
-1. Relić, I. et al. *The FREUID Challenge 2026 - IJCAI-ECAI.* Kaggle, 2026. https://www.kaggle.com/competitions/the-freuid-challenge-2026-ijcai-ecai
-2. Microblink Fraud Lab, Microblink LLC. Dataset FREUID, licença de pesquisa não comercial.
-3. Brasil. Lei nº 13.709, de 14 de agosto de 2018. Lei Geral de Proteção de Dados Pessoais.
-4. Pedregosa, F. et al. Scikit-learn: Machine Learning in Python. *Journal of Machine Learning Research*, v. 12, p. 2825–2830, 2011.
-5. UFG/IIG. Materiais de Técnicas de IA I. Fluxo supervisionado, regressão logística, árvores, Random Forest, métricas e matriz de confusão.
+1. RELIĆ, I.; D'ELIA, V.; BORTOLI, S.; TUDORAN, R.; NEDYALKOVA, H.; BOŠNJAK, M.; PAVLIĆ, S.; MAVRAČIĆ, T.; DAŠIĆ, D.; KAČAN, M.; ŠEGVIĆ, J.; ČERIĆ, P.; ŠOPRUN, F.; MIOČIĆ, M.; ORŠIĆ, M.; VAIANI, L.; GARZA, P. *The FREUID Challenge 2026 – IJCAI-ECAI.* Kaggle, 2026. https://www.kaggle.com/competitions/the-freuid-challenge-2026-ijcai-ecai
+2. Dataset FREUID fornecido pelo Microblink Fraud Lab (Microblink LLC), licença de pesquisa não comercial.
+3. ISO/IEC 30107-3:2023. *Information technology — Biometric presentation attack detection — Part 3: Testing and reporting.*
+4. TAN, M.; LE, Q. EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks. *Proceedings of ICML*, 2019.
+5. BREIMAN, L. Random Forests. *Machine Learning*, v. 45, p. 5–32, 2001.
+6. PEDREGOSA, F. et al. Scikit-learn: Machine Learning in Python. *Journal of Machine Learning Research*, v. 12, p. 2825–2830, 2011.
+7. SELVARAJU, R. R. et al. Grad-CAM: Visual Explanations from Deep Networks via Gradient-based Localization. *Proceedings of ICCV*, 2017.
+8. BRASIL. Lei nº 13.709, de 14 de agosto de 2018. Lei Geral de Proteção de Dados Pessoais.
+9. UFG/IIG. Materiais de Técnicas de IA I: fluxo supervisionado, regressão logística, árvores, Random Forest, métricas e matriz de confusão.
 
-## Anexo — onde está cada peça
+## Anexo: origem de cada número
 
-| Peça | Caminho |
+| Peça | Arquivo |
 |---|---|
-| Estudo dos 69.352 rótulos e da amostra | `reports/analise/eda.json`, `reports/figs/eda_*.png` |
-| Inventário dos 464 arquivos | `reports/analise/inventario.json` |
-| Treino, holdout e atalhos | `reports/analise/modelagem.json` |
-| Importância por permutação | `reports/analise/importancia_permutacao.csv` |
-| Figuras do treino | `reports/figs/mod_*.png` |
-| Protocolo de split | `src/protocolo.py` |
-| Características | `src/features.py` |
-| Modelos | `src/modelagem.py` |
-| Previsões com identificadores | só em `C:\freuid\data`, fora do git |
+| Inventário, universo e split | `reports/analise/inventario.json` (script `src/inventario.py`) |
+| População e exploração das imagens | `reports/analise/eda.json`, `reports/figs/eda_*.png` (`src/eda_completa.py`) |
+| Modelos clássicos | `reports/analise/modelagem.json`, `importancia_permutacao.csv`, `reports/figs/mod_*.png` (`src/modelagem.py`) |
+| CNN | `reports/analise/cnn.json`, `reports/figs/cnn_*.png` (`src/cnn_protocolo.py`) |
+| Grad-CAM (só números) | `reports/analise/gradcam_resumo.json` (`src/gradcam.py`) |
+| Tabela de comparação | `reports/analise/comparacao.csv`, `reports/figs/comparacao_id_ood.png` (`src/comparacao.py`) |
+| Experimento anterior (n = 464) | `reports/historico_n464/` |

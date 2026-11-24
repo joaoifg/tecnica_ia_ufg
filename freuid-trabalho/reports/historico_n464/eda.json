@@ -1,0 +1,295 @@
+{
+  "n_total": 69352,
+  "colunas": [
+    "id",
+    "image_path",
+    "label",
+    "is_digital",
+    "type"
+  ],
+  "nulos": 0,
+  "ids_duplicados": 0,
+  "n_legitimo": 40005,
+  "n_fraude": 29347,
+  "pct_fraude": 0.4231601107394163,
+  "por_tipo": [
+    {
+      "type": "MAURITIUS/ID",
+      "pais": "Maurício",
+      "n": 13362,
+      "legitimo": 8002,
+      "fraude": 5360,
+      "taxa": 0.4011375542583446,
+      "ic_lo": 0.39285655026697336,
+      "ic_hi": 0.40947538818724266
+    },
+    {
+      "type": "MOZAMBIQUE/DL",
+      "pais": "Moçambique",
+      "n": 13365,
+      "legitimo": 8001,
+      "fraude": 5364,
+      "taxa": 0.40134680134680134,
+      "ic_lo": 0.39306594877103435,
+      "ic_hi": 0.4096843508510361
+    },
+    {
+      "type": "BENIN/DL",
+      "pais": "Benin",
+      "n": 13369,
+      "legitimo": 8001,
+      "fraude": 5368,
+      "taxa": 0.4015259181688982,
+      "ic_lo": 0.3932456382161222,
+      "ic_hi": 0.40986277518196973
+    },
+    {
+      "type": "GUINEA/DL",
+      "pais": "Guiné",
+      "n": 13389,
+      "legitimo": 8001,
+      "fraude": 5388,
+      "taxa": 0.40241989693031593,
+      "ic_lo": 0.3941424981650905,
+      "ic_hi": 0.4107532754099512
+    },
+    {
+      "type": "EGYPT/DL",
+      "pais": "Egito",
+      "n": 15867,
+      "legitimo": 8000,
+      "fraude": 7867,
+      "taxa": 0.49580891157748785,
+      "ic_lo": 0.48803115761063354,
+      "ic_hi": 0.5035886944834105
+    }
+  ],
+  "qui2": {
+    "chi2": 444.9076106751161,
+    "p": 5.479332034628482e-95,
+    "gl": 4,
+    "v_cramer": 0.08009500309404789
+  },
+  "is_digital": [
+    {
+      "is_digital": false,
+      "n": 20,
+      "fraude": 14,
+      "taxa": 0.7,
+      "ic_lo": 0.4810232237710206,
+      "ic_hi": 0.854524726031006
+    },
+    {
+      "is_digital": true,
+      "n": 69332,
+      "fraude": 29333,
+      "taxa": 0.4230802515432989,
+      "ic_lo": 0.4194070652792347,
+      "ic_hi": 0.42676196139051575
+    }
+  ],
+  "fisher": {
+    "odds_ratio": 0.31429000010714553,
+    "p": 0.021012142798216244
+  },
+  "parte_b_n_imagens": 464,
+  "amostra": {
+    "n": 464,
+    "fracao_do_total": 0.006690506402122505,
+    "pct_fraude": 0.4353448275862069,
+    "recapturadas": 0,
+    "comparacao": [
+      {
+        "pais": "Benin",
+        "pct_pop": 0.19277021571115469,
+        "pct_amostra": 0.19827586206896552,
+        "fraude_pop": 0.4015259181688982,
+        "fraude_amostra": 0.42391304347826086
+      },
+      {
+        "pais": "Egito",
+        "pct_pop": 0.2287893644018918,
+        "pct_amostra": 0.2629310344827586,
+        "fraude_pop": 0.49580891157748785,
+        "fraude_amostra": 0.5245901639344263
+      },
+      {
+        "pais": "Guiné",
+        "pct_pop": 0.1930585996077979,
+        "pct_amostra": 0.18318965517241378,
+        "fraude_pop": 0.40241989693031593,
+        "fraude_amostra": 0.3764705882352941
+      },
+      {
+        "pais": "Maurício",
+        "pct_pop": 0.19266928134732955,
+        "pct_amostra": 0.17456896551724138,
+        "fraude_pop": 0.4011375542583446,
+        "fraude_amostra": 0.41975308641975306
+      },
+      {
+        "pais": "Moçambique",
+        "pct_pop": 0.19271253893182605,
+        "pct_amostra": 0.1810344827586207,
+        "fraude_pop": 0.40134680134680134,
+        "fraude_amostra": 0.39285714285714285
+      }
+    ]
+  },
+  "metadados": {
+    "largura": {
+      "mediana_legitimo": 1584.0,
+      "mediana_fraude": 1584.0,
+      "p_mannwhitney": 0.6160567853496616,
+      "auc_univariada": 0.48699077923059475
+    },
+    "altura": {
+      "mediana_legitimo": 1000.0,
+      "mediana_fraude": 1000.0,
+      "p_mannwhitney": 0.4258563106021379,
+      "auc_univariada": 0.4806703952838031
+    },
+    "tamanho_kb": {
+      "mediana_legitimo": 231.51611328125,
+      "mediana_fraude": 230.607421875,
+      "p_mannwhitney": 0.8594947456915684,
+      "auc_univariada": 0.4952006651046785
+    }
+  },
+  "features": {
+    "n": 73,
+    "significativas_bonferroni": 10,
+    "top": [
+      {
+        "feature": "hist_G_00",
+        "familia": "Histograma G",
+        "auc": 0.7489229839014437,
+        "poder": 0.24892298390144374,
+        "cohen_d": 0.7012554462630585,
+        "p": 1.997195034772336e-22
+      },
+      {
+        "feature": "hist_B_00",
+        "familia": "Histograma B",
+        "auc": 0.716385760713476,
+        "poder": 0.21638576071347604,
+        "cohen_d": 0.7336513462526693,
+        "p": 2.8192729986181023e-16
+      },
+      {
+        "feature": "hist_B_01",
+        "familia": "Histograma B",
+        "auc": 0.7041606832438968,
+        "poder": 0.2041606832438968,
+        "cohen_d": 0.4872181056821429,
+        "p": 4.335524127080666e-14
+      },
+      {
+        "feature": "hist_R_00",
+        "familia": "Histograma R",
+        "auc": 0.6876747789282746,
+        "poder": 0.18767477892827455,
+        "cohen_d": 0.5257201756605462,
+        "p": 3.2323563683992386e-12
+      },
+      {
+        "feature": "min_G",
+        "familia": "Estatísticas de cor",
+        "auc": 0.31935416824125157,
+        "poder": 0.18064583175874843,
+        "cohen_d": -0.8011048818981941,
+        "p": 2.1517654508060656e-11
+      },
+      {
+        "feature": "hist_G_01",
+        "familia": "Histograma G",
+        "auc": 0.6799372685360139,
+        "poder": 0.17993726853601388,
+        "cohen_d": 0.6223939729465188,
+        "p": 2.790402260893096e-11
+      },
+      {
+        "feature": "saturacao_desvio",
+        "familia": "Perícia (ELA, nitidez, frequência)",
+        "auc": 0.6626483259012924,
+        "poder": 0.1626483259012924,
+        "cohen_d": 0.518530763870377,
+        "p": 1.8488497527529659e-09
+      },
+      {
+        "feature": "hist_R_01",
+        "familia": "Histograma R",
+        "auc": 0.6601069458090848,
+        "poder": 0.1601069458090848,
+        "cohen_d": 0.5100797567235329,
+        "p": 3.238575305889314e-09
+      },
+      {
+        "feature": "min_B",
+        "familia": "Estatísticas de cor",
+        "auc": 0.3697471846421283,
+        "poder": 0.1302528153578717,
+        "cohen_d": -0.49801965908892615,
+        "p": 1.3724890079140627e-06
+      },
+      {
+        "feature": "energia_alta_freq",
+        "familia": "Perícia (ELA, nitidez, frequência)",
+        "auc": 0.4051470032499433,
+        "poder": 0.0948529967500567,
+        "cohen_d": -0.33339956795521697,
+        "p": 0.0004564653922797988
+      },
+      {
+        "feature": "hist_B_03",
+        "familia": "Histograma B",
+        "auc": 0.4104565036656337,
+        "poder": 0.08954349633436631,
+        "cohen_d": -0.3774350966338658,
+        "p": 0.0009365892488494768
+      },
+      {
+        "feature": "entropia_cinza",
+        "familia": "Perícia (ELA, nitidez, frequência)",
+        "auc": 0.5888065905827224,
+        "poder": 0.08880659058272244,
+        "cohen_d": 0.18904791001099303,
+        "p": 0.0010320933242412792
+      },
+      {
+        "feature": "min_R",
+        "familia": "Estatísticas de cor",
+        "auc": 0.4170603129015192,
+        "poder": 0.08293968709848082,
+        "cohen_d": -0.25929372421408753,
+        "p": 0.002024971547229406
+      },
+      {
+        "feature": "desvio_B",
+        "familia": "Estatísticas de cor",
+        "auc": 0.5756367621494974,
+        "poder": 0.07563676214949744,
+        "cohen_d": 0.2566735517522013,
+        "p": 0.0051912791895668015
+      },
+      {
+        "feature": "hist_G_06",
+        "familia": "Histograma G",
+        "auc": 0.42626218728743104,
+        "poder": 0.07373781271256896,
+        "cohen_d": -0.2799474314648174,
+        "p": 0.006434539444367837
+      }
+    ],
+    "pares_corr_maior_0_9": 30,
+    "total_pares": 2628
+  },
+  "pca": {
+    "var_pc1": 0.280443058911747,
+    "var_pc2": 0.22803124681994325,
+    "comp_90": 9,
+    "comp_95": 14,
+    "silhueta_classe": 0.014118208134855932,
+    "silhueta_documento": 0.4837259774538779
+  }
+}

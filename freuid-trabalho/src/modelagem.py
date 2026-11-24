@@ -59,7 +59,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 
-from config import ANALISE, NOMES_PAIS, RANDOM_SEED
+from config import ANALISE, JOBS, NOMES_PAIS, RANDOM_SEED
 from protocolo import carregar_split, resumo_split
 from estilo import COR, COR_FAMILIA, COR_MODELO, aplicar, salvar
 from features import FEATURES, FEATURES_V1, build_feature_table, familia
@@ -81,7 +81,7 @@ def criar_modelos() -> dict:
         "Naive Bayes": escala(GaussianNB()),
         "Árvore de decisão": DecisionTreeClassifier(max_depth=8, min_samples_leaf=5,
                                                     class_weight="balanced", random_state=RANDOM_SEED),
-        "Random Forest": RandomForestClassifier(n_estimators=400, min_samples_leaf=2, n_jobs=1,
+        "Random Forest": RandomForestClassifier(n_estimators=400, min_samples_leaf=2, n_jobs=JOBS,
                                                 class_weight="balanced_subsample", random_state=RANDOM_SEED),
         "Gradient Boosting": HistGradientBoostingClassifier(max_iter=300, learning_rate=0.05,
                                                             class_weight="balanced", random_state=RANDOM_SEED),
@@ -262,7 +262,7 @@ def exp_hiperparametros(X, y, grupos, out):
     # GridSearch da Random Forest usando 'documento nunca visto' como validação
     grade_rf = {"max_depth": [6, 12, None], "min_samples_leaf": [1, 3, 8], "max_features": ["sqrt", 0.5]}
     gs = GridSearchCV(RandomForestClassifier(n_estimators=250, class_weight="balanced_subsample",
-                                             random_state=RANDOM_SEED, n_jobs=1),
+                                             random_state=RANDOM_SEED, n_jobs=JOBS),
                       grade_rf, cv=logo, scoring="roc_auc", n_jobs=1)
     gs.fit(X, y, groups=grupos)
     res["grid_rf"] = {"melhores": {k: (v if v is not None else "None") for k, v in gs.best_params_.items()},
@@ -522,7 +522,7 @@ def exp_atalhos(tab, X, y, tr, te_id, te_ood, out):
     res["so_tipo_auc_id"] = float(roc_auc_score(y[te_id], mod.predict_proba(tipos[te_id])[:, 1]))
     # (c) as 73 features conseguem dizer QUAL é o documento? (acurácia em 5 folds, universo inteiro)
     cv = StratifiedKFold(5, shuffle=True, random_state=RANDOM_SEED)
-    acc_tipo = cross_validate(RandomForestClassifier(n_estimators=300, random_state=RANDOM_SEED, n_jobs=1),
+    acc_tipo = cross_validate(RandomForestClassifier(n_estimators=300, random_state=RANDOM_SEED, n_jobs=JOBS),
                               X, tab["type"].to_numpy(), cv=cv, scoring="accuracy")["test_score"]
     res["acuracia_prever_tipo_pelas_features"] = {"media": float(acc_tipo.mean()), "chance": float(
         tab["type"].value_counts(normalize=True).max())}

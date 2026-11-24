@@ -1,0 +1,170 @@
+{
+  "modelo": "EfficientNet-B0",
+  "args": {
+    "arq": "efficientnet_b0",
+    "epocas": 10,
+    "paciencia": 3,
+    "bs": 16,
+    "lr": 0.001,
+    "workers": 0,
+    "max_treino": 0,
+    "retomar": false,
+    "saida": "C:\\freuid\\runs\\ood_efficientnet_b0"
+  },
+  "protocolo": {
+    "semente": 42,
+    "tipo_ood": "MOZAMBIQUE/DL",
+    "frac_val_id": 0.2,
+    "n_universo": 24998,
+    "treino": {
+      "n": 16145,
+      "fraudes": 6919,
+      "legitimos": 9226,
+      "hash_ids": "850957fbd3c9c7ec"
+    },
+    "val_id": {
+      "n": 4037,
+      "fraudes": 1730,
+      "legitimos": 2307,
+      "hash_ids": "4cb990bdc3b272dc"
+    },
+    "ood": {
+      "n": 4816,
+      "fraudes": 1933,
+      "legitimos": 2883,
+      "hash_ids": "580593bf35d8daeb"
+    }
+  },
+  "n_treino_usado": 16145,
+  "historico": [
+    {
+      "epoca": 1,
+      "perda_treino": 0.48252412952239027,
+      "seg": 778.0115048885345,
+      "val_id_auc": 0.9992895460160205,
+      "val_id_freuid": 0.0023811368830201074,
+      "melhor_ep": 1
+    },
+    {
+      "epoca": 2,
+      "perda_treino": 0.17111401245869304,
+      "seg": 770.1172592639923,
+      "val_id_auc": 0.999747939796197,
+      "val_id_freuid": 0.0012831618089743646,
+      "melhor_ep": 2
+    },
+    {
+      "epoca": 3,
+      "perda_treino": 0.15042717957165835,
+      "seg": 769.0608308315277,
+      "val_id_auc": 0.9999486358431614,
+      "val_id_freuid": 0.0003147687867501858,
+      "melhor_ep": 3
+    },
+    {
+      "epoca": 4,
+      "perda_treino": 0.14664956812107174,
+      "seg": 777.2240245342255,
+      "val_id_auc": 0.9999314726980715,
+      "val_id_freuid": 0.0009020098362177986,
+      "melhor_ep": 3
+    },
+    {
+      "epoca": 5,
+      "perda_treino": 0.14110203695043227,
+      "seg": 777.1243939399719,
+      "val_id_auc": 0.9996994570432787,
+      "val_id_freuid": 0.00043930807827574636,
+      "melhor_ep": 3
+    },
+    {
+      "epoca": 6,
+      "perda_treino": 0.13373992795159725,
+      "seg": 770.4095675945282,
+      "val_id_auc": 0.999902909215732,
+      "val_id_freuid": 0.0003376205794594078,
+      "melhor_ep": 3
+    }
+  ],
+  "melhor_epoca": 3,
+  "limiar_custo": 0.07,
+  "observacao_limiar": "limiar de custo (5·FN + 1·FP) escolhido nas previsões da validação ID, que também serviu ao early stopping: os números ID no limiar de custo são otimistas; os OOD não.",
+  "holdout": {
+    "id": {
+      "limiar_0.5": {
+        "n": 4037,
+        "auc": 0.9999486358431614,
+        "audet": 5.1364156838595854e-05,
+        "apcer_1pct_bpcer": 0.0005780346820809523,
+        "tpr_1pct": 0.999421965317919,
+        "freuid": 0.0003147687867501858,
+        "limiar": 0.5,
+        "acuracia": 0.9977706217488234,
+        "precisao": 0.9994196169471852,
+        "recall": 0.9953757225433526,
+        "f1": 0.9973935708079931,
+        "vn": 2306,
+        "fp": 1,
+        "fn": 8,
+        "vp": 1722,
+        "custo": 41
+      },
+      "limiar_custo": {
+        "n": 4037,
+        "auc": 0.9999486358431614,
+        "audet": 5.1364156838595854e-05,
+        "apcer_1pct_bpcer": 0.0005780346820809523,
+        "tpr_1pct": 0.999421965317919,
+        "freuid": 0.0003147687867501858,
+        "limiar": 0.07,
+        "acuracia": 0.9985137478325489,
+        "precisao": 0.9982658959537573,
+        "recall": 0.9982658959537573,
+        "f1": 0.9982658959537573,
+        "vn": 2304,
+        "fp": 3,
+        "fn": 3,
+        "vp": 1727,
+        "custo": 18
+      }
+    },
+    "ood": {
+      "limiar_0.5": {
+        "n": 4816,
+        "auc": 0.7965242670746455,
+        "audet": 0.20347573292535448,
+        "apcer_1pct_bpcer": 0.5012933264355923,
+        "tpr_1pct": 0.4987066735644077,
+        "freuid": 0.3866237206314199,
+        "limiar": 0.5,
+        "acuracia": 0.43106312292358806,
+        "precisao": 0.4129449838187702,
+        "recall": 0.9901707190894982,
+        "f1": 0.5828258221680876,
+        "vn": 162,
+        "fp": 2721,
+        "fn": 19,
+        "vp": 1914,
+        "custo": 2816
+      },
+      "limiar_custo": {
+        "n": 4816,
+        "auc": 0.7965242670746455,
+        "audet": 0.20347573292535448,
+        "apcer_1pct_bpcer": 0.5012933264355923,
+        "tpr_1pct": 0.4987066735644077,
+        "freuid": 0.3866237206314199,
+        "limiar": 0.07,
+        "acuracia": 0.4013704318936877,
+        "precisao": 0.4013704318936877,
+        "recall": 1.0,
+        "f1": 0.5728256037931545,
+        "vn": 0,
+        "fp": 2883,
+        "fn": 0,
+        "vp": 1933,
+        "custo": 2883
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+modelo,split,n,roc_auc,audet,apcer_1pct_bpcer,freuid,limiar_custo,recall_limiar_custo,recall_limiar_0_5,fonte
+Regressão logística,validação ID,4037,0.967695,0.032305,0.174566,0.109079,0.260000,0.934682,0.866474,modelagem.json
+Random Forest,validação ID,4037,0.991298,0.008702,0.073410,0.042148,0.220000,0.964162,0.920231,modelagem.json
+Gradient Boosting,validação ID,4037,0.992707,0.007293,0.068786,0.039022,0.170000,0.967052,0.933526,modelagem.json
+Regressão logística,OOD (Moçambique),4816,0.669157,0.330843,0.941542,0.892477,0.260000,0.323332,0.296948,modelagem.json
+Random Forest,OOD (Moçambique),4816,0.584036,0.415964,0.924987,0.867050,0.220000,1.000000,1.000000,modelagem.json
+Gradient Boosting,OOD (Moçambique),4816,0.540825,0.459175,1.000000,1.000000,0.170000,1.000000,1.000000,modelagem.json
+EfficientNet-B0,validação ID,4037,0.999949,0.000051,0.000578,0.000315,0.070000,0.998266,0.995376,cnn.json
+EfficientNet-B0,OOD (Moçambique),4816,0.796524,0.203476,0.501293,0.386624,0.070000,1.000000,0.990171,cnn.json
