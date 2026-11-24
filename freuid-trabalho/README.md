@@ -4,7 +4,7 @@ Trabalho final de **Técnicas de IA I** (UFG / IIG, prof. Paulo Victor dos Santo
 
 Pergunta: um órgão público consegue usar a imagem do documento para estimar P(fraude) com os modelos da disciplina, e esse escore ainda vale quando o tipo de documento é novo?
 
-**As imagens, os CSVs do dataset, `features.csv`, as previsões e os pesos `.pt` ficam fora do git**, em `C:\freuid\` (licença Microblink: pesquisa não comercial, sem redistribuição). O repositório guarda só código, JSON com números agregados e gráficos sem foto de documento.
+**As imagens, os CSVs do dataset, `features.csv`, as previsões e os pesos `.pt` ficam fora do git**, em `C:\freuid\` (licença Microblink: pesquisa não comercial, sem redistribuição). O repositório guarda código, JSON com números agregados, gráficos sem foto de documento e a lista de caminhos das imagens usadas.
 
 ## Ambiente
 
@@ -71,5 +71,6 @@ A primeira tentativa de treinar a CNN derrubou o Windows (telas azuis com códig
 - Relić, I. et al. *The FREUID Challenge 2026 – IJCAI-ECAI.* Kaggle, 2026.
 - Dataset FREUID fornecido pelo Microblink Fraud Lab (Microblink LLC), licença de pesquisa não comercial.
 - Não versionar imagens, CSVs do dataset, `features.csv`, pesos nem `kaggle.json`.
+- `reports/analise/imagens_utilizadas.csv` lista só o `id` e o caminho das 24.998 imagens usadas, dentro do zip da competição (`train/train/<id>.jpeg`). Não traz a foto nem o rótulo. O dataset está em https://www.kaggle.com/competitions/the-freuid-challenge-2026-ijcai-ecai
 - Não publicar foto, recorte ou Grad-CAM sobre documento em artigo, slide ou git.
 - Não usar o modelo em produto ou produção. Apagar os dados ao fim do trabalho.
