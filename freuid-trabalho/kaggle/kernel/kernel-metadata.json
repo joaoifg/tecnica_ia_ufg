@@ -1,0 +1,15 @@
+{
+  "id": "joaohenriquecfo/freuid-cnn-ood",
+  "title": "FREUID CNN OOD",
+  "code_file": "freuid_kaggle.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "competition_sources": [
+    "the-freuid-challenge-2026-ijcai-ecai"
+  ],
+  "dataset_sources": [],
+  "kernel_sources": []
+}

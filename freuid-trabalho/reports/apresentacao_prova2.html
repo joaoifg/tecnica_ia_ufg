@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Prova 2 · FREUID · Técnicas de IA I</title>
+<style>
+  :root {
+    --navy: #0d3b66;
+    --navy-deep: #0b2f4a;
+    --gold: #c4a046;
+    --ink: #1c2833;
+    --muted: #4a5968;
+    --line: #d5dee8;
+    --soft: #f3f6fa;
+    --legit: #2c6eaf;
+    --fraud: #c0473b;
+    --green: #1f7a4d;
+    --rf: #c47b2b;
+    --white: #fff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: #1b2430;
+    color: var(--ink);
+    font-family: "Segoe UI", Calibri, sans-serif;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+  }
+  #deck { width: 1280px; height: 720px; position: relative; transform-origin: center center; }
+  .slide {
+    position: absolute; inset: 0;
+    display: none;
+    flex-direction: column;
+    background: var(--white);
+    padding: 28px 44px 18px;
+    overflow: hidden;
+  }
+  .slide.active { display: flex; }
+  .kicker {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--navy);
+  }
+  h1 {
+    margin: 2px 0 0;
+    font-size: 34px;
+    line-height: 1.12;
+    color: var(--navy);
+    font-weight: 700;
+  }
+  .lead { margin: 10px 0 0; font-size: 18px; line-height: 1.4; }
+  .body { flex: 1; min-height: 0; margin-top: 16px; }
+  .foot {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 10px; padding-top: 8px;
+    border-top: 1px solid var(--line);
+    color: var(--muted); font-size: 13px;
+  }
+  .foot b { color: var(--navy); }
+  .take {
+    background: var(--soft);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 17px;
+    line-height: 1.4;
+  }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .card {
+    background: var(--soft);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .card h3 { margin: 0 0 6px; font-size: 18px; color: var(--navy); }
+  .card p, .card li { margin: 0; font-size: 15.5px; line-height: 1.4; }
+  .card ul { margin: 6px 0 0; padding-left: 18px; }
+  .card li { margin-bottom: 4px; }
+  .num {
+    font-size: 34px; font-weight: 800; color: var(--navy); line-height: 1;
+  }
+  .num small { font-size: 18px; font-weight: 700; }
+  .lbl { margin-top: 6px; font-size: 15px; font-weight: 700; }
+  .sub { margin-top: 3px; font-size: 13.5px; color: var(--muted); line-height: 1.35; }
+  pre {
+    margin: 0;
+    background: var(--soft);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 14.5px;
+    line-height: 1.38;
+    color: var(--navy-deep);
+    white-space: pre-wrap;
+  }
+  .out {
+    margin-top: 10px;
+    background: var(--navy-deep);
+    color: #fff;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 14.5px;
+    line-height: 1.45;
+    white-space: pre-line;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 15.5px; }
+  th, td { padding: 8px 10px; text-align: center; }
+  th { background: var(--navy-deep); color: #fff; font-weight: 700; }
+  td { background: var(--soft); border-bottom: 1px solid var(--line); }
+  td.l, th.l { text-align: left; }
+  .barrow { display: grid; grid-template-columns: 148px 1fr 64px; gap: 10px; align-items: center; margin-bottom: 8px; }
+  .barrow b { color: var(--navy); font-size: 15px; }
+  .barrow span { display: block; font-size: 12px; color: var(--muted); font-weight: 400; }
+  .track { height: 28px; display: flex; border-radius: 5px; overflow: hidden; background: #e6edf4; }
+  .track i { display: block; height: 100%; }
+  .a { background: var(--legit); }
+  .b { background: var(--fraud); }
+  .pct { text-align: right; font-weight: 800; color: var(--fraud); }
+  .cm { display: grid; grid-template-columns: 92px 1fr 1fr; gap: 6px; }
+  .cm .h { font-size: 12.5px; font-weight: 700; color: var(--muted); display: grid; place-items: center; text-align: center; }
+  .cm .c { border-radius: 10px; display: grid; place-items: center; text-align: center; min-height: 78px; background: var(--soft); }
+  .cm .c > div { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .cm .c b { font-size: 28px; line-height: 1; display: block; }
+  .cm .c span { font-size: 12px; font-weight: 700; display: block; }
+  .cm .bad { background: var(--fraud); color: #fff; }
+  .cm .okg b { color: var(--green); }
+  .cm .okb b { color: var(--legit); }
+  .cm .warn b { color: var(--rf); }
+  .steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .step { background: var(--soft); border-radius: 12px; padding: 12px; min-height: 168px; }
+  .step .n {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--navy); color: #fff; display: grid; place-items: center;
+    font-weight: 800; margin-bottom: 8px;
+  }
+  .step h3 { margin: 0 0 6px; font-size: 16px; color: var(--navy); }
+  .step p { margin: 0; font-size: 14px; line-height: 1.35; }
+  .split { display: flex; height: 64px; border-radius: 10px; overflow: hidden; color: #fff; font-weight: 700; }
+  .split div { display: flex; flex-direction: column; justify-content: center; padding: 0 12px; }
+  .split small { font-weight: 500; font-size: 12px; opacity: .9; }
+  .cover {
+    background: radial-gradient(circle at 85% 15%, #164e82 0%, #0b2f4a 48%, #071e33 100%);
+    color: #fff; padding: 54px 64px;
+  }
+  .cover h1 { color: #fff; font-size: 48px; line-height: 1.05; }
+  .cover h1 em { color: var(--gold); font-style: normal; }
+  .cover .badge {
+    display: inline-block; margin-bottom: 18px; padding: 6px 12px;
+    border: 1px solid var(--gold); color: var(--gold); border-radius: 999px;
+    font-size: 13px; letter-spacing: .08em; font-weight: 700;
+  }
+  .cover .sub { font-size: 20px; line-height: 1.4; max-width: 760px; margin-top: 16px; color: rgba(255,255,255,.9); }
+  .cover .who { margin-top: 36px; font-size: 16px; line-height: 1.55; color: rgba(255,255,255,.82); }
+  .cover .who b { color: #fff; font-size: 18px; }
+  .toc { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 10px; }
+  .toc li { display: grid; grid-template-columns: 42px 1fr; gap: 12px; align-items: center; }
+  .toc .n {
+    width: 42px; height: 42px; border-radius: 10px; background: var(--navy); color: #fff;
+    display: grid; place-items: center; font-weight: 800; font-size: 18px;
+  }
+  .toc strong { display: block; font-size: 18px; color: var(--navy); }
+  .toc span { font-size: 14.5px; color: var(--muted); }
+  img.roc { width: 100%; height: 292px; object-fit: contain; background: #fff; border-radius: 8px; }
+  .hint { position: fixed; right: 16px; bottom: 10px; color: rgba(255,255,255,.45); font-size: 12px; }
+  @media print {
+    @page { size: 1280px 720px; margin: 0; }
+    html, body { background: #fff; display: block; overflow: visible; height: auto; }
+    #deck { transform: none !important; width: 1280px; height: auto; }
+    .slide {
+      position: relative; display: flex !important;
+      width: 1280px; height: 720px; break-after: page; page-break-after: always;
+    }
+    .hint { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="deck">
+
+<section class="slide cover">
+  <div>
+    <div class="badge">PROVA 2 · 24 E 25 DE NOVEMBRO DE 2026</div>
+    <h1>Esse documento é<br><em>verdadeiro?</em></h1>
+    <p class="sub">Detecção de fraude em documentos de identidade com o dataset FREUID 2026. Da escolha dos dados ao resultado no Egito e em Moçambique.</p>
+    <div class="who">
+      <b>João Henrique Gomes Dias, Tiago e Micaela</b><br>
+      Bacharelado em IA Aplicada à Gestão Pública · UFG / IIG<br>
+      IIG0029 Técnicas de IA I · Prof. Paulo Victor dos Santos
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <p class="kicker">O que a prova pede</p>
+  <h1>Sete pontos, nesta ordem</h1>
+  <div class="body">
+    <ol class="toc">
+      <li><span class="n">1</span><div><strong>Dataset</strong><span>FREUID Challenge 2026, fraude em documento de identidade</span></div></li>
+      <li><span class="n">2</span><div><strong>Por que serve para IA</strong><span>Tem X e tem Y. É classificação binária supervisionada</span></div></li>
+      <li><span class="n">3</span><div><strong>Análise exploratória</strong><span>69.352 rótulos: classes, países e o que quase não aparece</span></div></li>
+      <li><span class="n">4</span><div><strong>Pipeline</strong><span>Foto → 64 números → split → logística e Random Forest</span></div></li>
+      <li><span class="n">5</span><div><strong>Resultados</strong><span>Matriz no Egito e a queda em Moçambique</span></div></li>
+      <li><span class="n">6</span><div><strong>Otimização</strong><span>O que o código já ajustou e o que ainda precisa</span></div></li>
+      <li><span class="n">7</span><div><strong>Artigo</strong><span>Mínimo de 10 páginas no template IEEE do Overleaf</span></div></li>
+    </ol>
+  </div>
+  <div class="foot"><span>IIG0029 · Técnicas de IA I</span><b class="pg"></b></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">1 · Dataset</p>
+  <h1>FREUID 2026, ligado ao balcão público</h1>
+  <p class="lead">Conselho, benefício e concurso conferem uma identidade antes de abrir o cadastro. O dataset traz a foto do documento e a resposta: legítimo ou fraude.</p>
+  <div class="body grid3">
+    <div class="card"><div class="num">69.352</div><div class="lbl">imagens rotuladas</div><div class="sub">Treino oficial do Kaggle. Cada linha tem a foto e o rótulo.</div></div>
+    <div class="card"><div class="num">5</div><div class="lbl">modelos de documento</div><div class="sub">CNH de Egito, Guiné, Benin e Moçambique, e a identidade de Maurício.</div></div>
+    <div class="card"><div class="num">3</div><div class="lbl">formas de fraude</div><div class="sub">Manipulação física, edição por IA generativa e imprimir para fotografar de novo.</div></div>
+    <div class="card"><div class="num">0</div><div class="lbl">pessoas reais</div><div class="sub">Documentos sintéticos da Microblink. Não há dado pessoal sujeito à LGPD.</div></div>
+    <div class="card"><div class="num">46,65 <small>GB</small></div><div class="lbl">competição inteira</div><div class="sub">O experimento usa um recorte. O treino oficial não foi baixado por completo.</div></div>
+    <div class="card"><div class="num">544</div><div class="lbl">fotos no nosso fit</div><div class="sub">0,8% do treino. Serve para comparar os modelos da aula.</div></div>
+  </div>
+  <div class="foot"><span>The FREUID Challenge 2026 – IJCAI-ECAI · Microblink Fraud Lab</span><b class="pg"></b></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">2 · Serve para IA?</p>
+  <h1>Sim. O par (X, Y) já vem pronto</h1>
+  <p class="lead" style="text-align:center;font-size:28px;color:var(--navy);font-family:Cambria,Georgia,serif">D = { ( x , y ) }</p>
+  <div class="body grid2">
+    <div class="card">
+      <h3 style="color:var(--legit)">X · a imagem</h3>
+      <p>O JPEG do documento. No nosso código ele vira 64 números: histograma de cor, brilho e gradiente das bordas. Sem esses números, a regressão logística não tem o que somar.</p>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--green)">Y · o rótulo</h3>
+      <p><b>0</b> é legítimo. <b>1</b> é fraude. O modelo vê a resposta no treino e, no teste, só recebe a foto. Isso é classificação binária supervisionada, o caso da aula, não regressão.</p>
+    </div>
+  </div>
+  <div class="take" style="margin-top:14px">A IA entra como filtro de risco antes do servidor. Ela não carimba o cadastro sozinha. Deixar a fraude passar é o erro caro. Barrar um legítimo gera fila, e uma pessoa corrige.</div>
+  <div class="foot"><span>Colunas reais: id, image_path, label, is_digital, type</span><b class="pg"></b></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">3 · Análise exploratória</p>
+  <h1>As duas classes são grandes</h1>
+  <p class="lead">Contagem feita em <b>train_labels.csv</b>, nas 69.352 linhas, antes de baixar qualquer foto.</p>
+  <div class="body grid2">
+    <div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="num" style="color:var(--legit)">57,7%</div>
+        <div class="lbl">40.005 legítimos · label 0</div>
+      </div>
+      <div class="card">
+        <div class="num" style="color:var(--fraud)">42,3%</div>
+        <div class="lbl">29.347 fraudes · label 1</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>O que essa conta muda</h3>
+      <ul>
+        <li>Não é um problema de fraude rara. Chutar sempre “legítimo” já erra 42%.</li>
+        <li>Há exemplo bastante das duas classes para um classificador da aula.</li>
+        <li>O código usa <b>class_weight="balanced"</b> porque, dentro do recorte, as classes ainda não ficam meio a meio.</li>
+        <li>A métrica da prova não pode ser só acurácia: o custo dos dois erros é diferente.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>eda.py · value_counts na coluna label</span><b class="pg"></b></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">3 · Análise exploratória · eda.py</p>
+  <h1>O código que contou as classes</h1>
+  <p class="lead">value_counts agrupa as linhas pelo rótulo. sort_index deixa o 0 antes do 1. A porcentagem é o tamanho da classe dividido pelas 69.352 linhas.</p>
+  <div class="body">
+    <pre>full = pd.read_csv(DATA / "train_labels.csv")
+vc = full["label"].value_counts().sort_index()
+for k, n in vc.items():
+    pct = 100 * n / len(full)
+    print(k, f"{n:,}", f"{pct:.1f}%")</pre>
+    <div class="out">0   40,005   57.7%    legítimo
+1   29,347   42.3%    fraude</div>
+  </div>
+  <div class="foot"><span>eda.py · a barra do próximo slide sai desta mesma tabela</span><b class="pg"></b></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">3 · Análise exploratória</p>
+  <h1>Legítimo e fraude, por documento</h1>
+  <div class="body" style="display:grid;grid-template-columns:1.45fr .7fr;gap:22px;align-items:center">
+    <div>
+      <div style="display:flex;gap:14px;margin-bottom:8px;font-size:13px">
+        <span style="color:var(--legit);font-weight:700">■ legítimo</span>
+        <span style="color:var(--fraud);font-weight:700">■ fraude</span>
+        <span style="margin-left:auto;color:var(--muted)">% de fraude</span>
+      </div>
+      <div class="barrow"><div><b>Egito</b><span>carteira</span></div><div class="track" style="width:100%"><i class="a" style="width:50.4%"></i><i class="b" style="width:49.6%"></i></div><div class="pct">49,6%</div></div>
+      <div class="barrow"><div><b>Guiné</b><span>carteira</span></div><div class="track" style="width:84.4%"><i class="a" style="width:59.8%"></i><i class="b" style="width:40.2%"></i></div><div class="pct">40,2%</div></div>
+      <div class="barrow"><div><b>Benin</b><span>carteira</span></div><div class="track" style="width:84.3%"><i class="a" style="width:59.8%"></i><i class="b" style="width:40.2%"></i></div><div class="pct">40,2%</div></div>
+      <div class="barrow"><div><b>Moçambique</b><span>carteira</span></div><div class="track" style="width:84.2%"><i class="a" style="width:59.9%"></i><i class="b" style="width:40.1%"></i></div><div class="pct">40,1%</div></div>
+      <div class="barrow"><div><b>Maurício</b><span>identidade</span></div><div class="track" style="width:84.2%"><i class="a" style="width:59.9%"></i><i class="b" style="width:40.1%"></i></div><div class="pct">40,1%</div></div>
+      <p class="sub">A largura da barra acompanha o total de imagens. Fonte: train_labels.csv.</p>
+    </div>
+    <div class="card">
+      <h3>Leitura</h3>
+      <p>Cada documento tem cerca de <b>8.000 legítimos</b>. Só o Egito chega perto de metade fraude, com cerca de 2.500 fraudes a mais que os outros.</p>
+      <p style="margin-top:10px">Por isso o teste deixa um país inteiro de fora. Se o modelo só decorar o Egito, Moçambique denuncia.</p>
+    </div>
+  </div>
+  <div class="foot"><span>eda.py · crosstab de type × label</span><b class="pg"></b></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">3 · Análise exploratória</p>
+  <h1>Quase tudo é digital</h1>
+  <div class="body grid2">
+    <div class="card">
+      <div class="num">69.332</div>
+      <div class="lbl">totalmente digitais</div>
+      <div class="sub">is_digital = True. Taxa de fraude: 42,3%.</div>
+    </div>
+    <div class="card">
+      <div class="num" style="color:var(--fraud)">20</div>
+      <div class="lbl">impressas e fotografadas</div>
+      <div class="sub">is_digital = False. Dessas 20, 14 são fraude (70%).</div>
+    </div>
+  </div>
+  <div class="take" style="margin-top:16px">O recorte de download guarda essas 20 de propósito, porque um sorteio simples as perderia. Mesmo assim, o modelo quase não vê o ataque de reimpressão. Dizer que ele detecta print-and-capture não cabe neste dado.</div>
+  <div class="foot"><span>eda.py · groupby is_digital · média do label</span><b class="pg"></b></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">4 · Pipeline</p>
+  <h1>O mesmo fluxo da aula, com foto</h1>
+  <div class="body">
+    <div class="steps">
+      <div class="step"><div class="n">1</div><h3>Carregar</h3><p>CSV de rótulos e as 544 fotos que existem na pasta.</p></div>
+      <div class="step"><div class="n">2</div><h3>Virar X</h3><p>Cada JPEG vira 128×128 e depois 64 números.</p></div>
+      <div class="step"><div class="n">3</div><h3>Separar</h3><p>Moçambique fica de fora. O Egito vira o teste.</p></div>
+      <div class="step"><div class="n">4</div><h3>Ajustar</h3><p>fit só nas 394 linhas de treino. Dois modelos.</p></div>
+      <div class="step"><div class="n">5</div><h3>Medir</h3><p>Corte 0,5, matriz, ROC e o score da competição.</p></div>
+    </div>
+    <pre style="margin-top:14px">score = model.predict_proba(X)[:, 1]   # chance de fraude
+pred  = (score &gt;= 0.5).astype(int)      # classe no corte 0,5</pre>
+  </div>
+  <div class="foot"><span>features.py → train.py → metric.py</span><b class="pg"></b></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">4 · Pipeline · features.py</p>
+  <h1>A foto vira 64 números</h1>
+  <p class="lead">A logística não recebe pixel. extract_one abre o JPEG, força RGB, reduz para 128×128 e junta cor com borda.</p>
+  <div class="body grid2">
+    <pre>def extract_one(path, size=128):
+    with Image.open(path) as im:
+        im = im.convert("RGB").resize(
+            (size, size), Image.BILINEAR
+        )
+        arr = np.asarray(im)
+    return np.concatenate([
+        _hist_features(arr),
+        _stat_features(arr),
+    ])</pre>
+    <div>
+      <pre>def _hist_features(arr, bins=16):
+    feats = []
+    for c in range(3):  # R, G, B
+        h, _ = np.histogram(
+            arr[:, :, c], bins=bins,
+            range=(0, 256), density=True,
+        )
+        feats.append(h)
+    return np.concatenate(feats)</pre>
+      <div class="out">3 canais × 16 faixas = 48
++ média, desvio, mín, máx e gradiente = 16
+= 64 números por foto</div>
+    </div>
+  </div>
+  <div class="foot"><span>features.py · density=True tira o efeito do tamanho da foto</span><b class="pg"></b></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">4 · Pipeline</p>
+  <h1>Como as 544 fotos foram divididas</h1>
+  <p class="lead">O último tipo em ordem alfabética, Moçambique, sai do treino por completo. Entre os outros, <b>groups=type</b> manda um país inteiro para o teste. Com a semente 42, esse país foi o Egito.</p>
+  <div class="body">
+    <div class="split">
+      <div style="background:var(--navy);flex:394">394 · treino<small>Benin, Guiné e Maurício</small></div>
+      <div style="background:var(--gold);color:#3a2c05;flex:109">109 · Egito<small>28 fraudes, 81 legítimos</small></div>
+      <div style="background:var(--fraud);flex:41">41<small>Moçambique</small></div>
+    </div>
+    <div class="grid2" style="margin-top:16px">
+      <pre>heldout = sorted(types)[-1]
+# MOZAMBIQUE/DL  →  teste OOD
+
+GroupShuffleSplit(
+    test_size=0.2,
+    random_state=42,
+    # groups = type
+)</pre>
+      <div class="card">
+        <h3>Por que um país inteiro</h3>
+        <p>Sortear foto por foto deixaria o mesmo documento no treino e no teste. O modelo decoraria a carteira, não a fraude. Egito mede se funciona num documento novo. Moçambique mede se funciona num país que ele nunca viu.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>train.py · split_data · semente 42</span><b class="pg"></b></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">4 · Pipeline</p>
+  <h1>Dois classificadores da aula</h1>
+  <div class="body grid2">
+    <div>
+      <h3 style="color:var(--legit);margin:0 0 8px">Regressão logística</h3>
+      <pre>Pipeline([
+  ("scaler", StandardScaler()),
+  ("clf", LogisticRegression(
+      max_iter=2000,
+      class_weight="balanced",
+      random_state=42,
+  )),
+])</pre>
+      <p style="margin-top:8px;font-size:15px">O scaler usa média e desvio só do treino. A sigmoide transforma a soma dos 64 números numa chance entre 0 e 1.</p>
+    </div>
+    <div>
+      <h3 style="color:var(--rf);margin:0 0 8px">Random Forest</h3>
+      <pre>RandomForestClassifier(
+    n_estimators=300,
+    max_depth=20,
+    min_samples_leaf=2,
+    class_weight="balanced_subsample",
+    random_state=42,
+)</pre>
+      <p style="margin-top:8px;font-size:15px">300 árvores votam. Cada uma pergunta se um dos 64 números passou de um corte. Sem scaler: a árvore não depende da escala.</p>
+    </div>
+  </div>
+  <div class="foot"><span>fit(X_train, y_train) com X_train de formato (394, 64)</span><b class="pg"></b></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">5 · Resultados · Egito, 109 fotos</p>
+  <h1>O que o corte 0,5 errou</h1>
+  <div class="body grid2">
+    <div>
+      <h3 style="color:var(--legit);margin:0 0 8px">Regressão logística</h3>
+      <div class="cm">
+        <div></div><div class="h">disse fraude</div><div class="h">disse legítimo</div>
+        <div class="h">é fraude<br>28</div>
+        <div class="c okg"><div><b>23</b><span>pega</span></div></div>
+        <div class="c bad"><div><b>5</b><span>passou</span></div></div>
+        <div class="h">é legítimo<br>81</div>
+        <div class="c warn"><div><b>27</b><span>alarme falso</span></div></div>
+        <div class="c okb"><div><b>54</b><span>aceito</span></div></div>
+      </div>
+      <p style="margin:8px 0 0;font-size:15px">Acurácia <b>0,71</b> · revocação da fraude <b>0,82</b></p>
+    </div>
+    <div>
+      <h3 style="color:var(--rf);margin:0 0 8px">Random Forest</h3>
+      <div class="cm">
+        <div></div><div class="h">disse fraude</div><div class="h">disse legítimo</div>
+        <div class="h">é fraude<br>28</div>
+        <div class="c okg"><div><b>19</b><span>pega</span></div></div>
+        <div class="c bad"><div><b>9</b><span>passou</span></div></div>
+        <div class="h">é legítimo<br>81</div>
+        <div class="c warn"><div><b>11</b><span>alarme falso</span></div></div>
+        <div class="c okb"><div><b>70</b><span>aceito</span></div></div>
+      </div>
+      <p style="margin:8px 0 0;font-size:15px">Acurácia <b>0,82</b> · revocação da fraude <b>0,68</b></p>
+    </div>
+  </div>
+  <div class="take">A floresta acerta mais no placar geral porque aceita mais legítimos. A logística deixa passar menos fraude: 5 contra 9. No balcão, a fraude que entra é o erro mais caro.</div>
+  <div class="foot"><span>predict no teste do Egito · o modelo não treinou neste documento</span><b class="pg"></b></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">5 · Resultados</p>
+  <h1>Funciona no Egito, cai em Moçambique</h1>
+  <div class="body" style="display:grid;grid-template-columns:1fr 1.05fr;gap:16px;align-items:start">
+    <div>
+      <img class="roc" src="roc_compare_id.png" alt="Curva ROC no Egito. Logística AUC 0,889. Floresta AUC 0,808." />
+      <p class="sub">ROC no Egito. A diagonal é o chute. AUC 0,50 seria sorteio.</p>
+    </div>
+    <div>
+      <table>
+        <tr><th class="l">modelo</th><th>teste</th><th>AUC</th><th>acurácia</th><th>revocação</th><th>score</th></tr>
+        <tr><td class="l">logística</td><td>Egito</td><td>0,889</td><td>0,71</td><td>0,82</td><td>0,279</td></tr>
+        <tr><td class="l">floresta</td><td>Egito</td><td>0,808</td><td>0,82</td><td>0,68</td><td>0,331</td></tr>
+        <tr><td class="l">logística</td><td>Moçambique</td><td>0,687</td><td>0,51</td><td>1,00</td><td>1,000</td></tr>
+        <tr><td class="l">floresta</td><td>Moçambique</td><td>0,691</td><td>0,51</td><td>1,00</td><td>0,582</td></tr>
+      </table>
+      <p style="margin-top:8px;font-size:14.5px;line-height:1.4">O score da competição é menor quanto melhor. Revocação 1,00 em Moçambique não é vitória: a acurácia 0,51 mostra que os dois passaram a chamar quase tudo de fraude.</p>
+    </div>
+  </div>
+  <div class="foot"><span>reports/metrics.csv · gráfico roc_compare_id.png</span><b class="pg"></b></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">5 · Resultados · metric.py</p>
+  <h1>O score da tabela, em código</h1>
+  <p class="lead">A competição não usa a acurácia. Ela junta o AUC com a fraude ainda pega quando no máximo 1% dos legítimos é barrado. O número publicado é 1 menos a média harmônica. Menor é melhor.</p>
+  <div class="body">
+    <pre>auc = roc_auc_score(y_true, y_score)
+fpr, tpr, _ = roc_curve(y_true, y_score)
+tpr_at_1 = tpr[fpr &lt;= 0.01].max()
+harm = 2 * auc * tpr_at_1 / (auc + tpr_at_1)
+score = 1 - harm</pre>
+    <div class="out">Egito        logística  0.2785     floresta  0.3305
+Moçambique   logística  1.0000     floresta  0.5817</div>
+  </div>
+  <div class="foot"><span>metric.py · freuid_score · no Egito a logística fica mais perto de zero</span><b class="pg"></b></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">6 · Otimização</p>
+  <h1>O que já foi ajustado, e o que ainda pede ajuste</h1>
+  <div class="body grid2">
+    <div class="card">
+      <h3 style="color:var(--green)">Já está no código</h3>
+      <ul>
+        <li>Amostra estratificada por label e type, com as 20 fotos impressas preservadas.</li>
+        <li>StandardScaler dentro do Pipeline, calculado só no treino.</li>
+        <li>class_weight balanced, para a classe menor não sumir no fit.</li>
+        <li>Teste por país inteiro, para o número não vir de documento repetido.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--fraud)">Ainda é necessário</h3>
+      <ul>
+        <li>O corte 0,5 é fixo. No balcão ele deveria mudar conforme o custo de deixar a fraude passar.</li>
+        <li>544 fotos não bastam para o modelo valer em outro país. Moçambique caiu para 0,51.</li>
+        <li>Histograma e borda não leem o rosto nem o nome. O passo seguinte, se couber, é uma CNN na imagem inteira.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="take" style="margin-top:14px">Não rodamos uma busca de hiperparâmetros. A otimização que o resultado pede não é um AUC maior no Egito. É um modelo que não desmorone num documento que nunca viu.</div>
+  <div class="foot"><span>config.py · train.py · o Egito já está acima do chute</span><b class="pg"></b></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">7 · Artigo · mínimo de 10 páginas</p>
+  <h1>Template IEEE, no Overleaf</h1>
+  <p class="lead">IEEEtran, duas colunas, formato de periódico. O arquivo da disciplina é o template oficial de Michael Shell.</p>
+  <div class="body grid2">
+    <div class="card">
+      <h3>O que cada parte já tem</h3>
+      <ul>
+        <li><b>Introdução</b> — o balcão e a pergunta do documento verdadeiro.</li>
+        <li><b>Dados e EDA</b> — 69.352 linhas, classes, países, 20 recapturas.</li>
+        <li><b>Método</b> — 64 números, split, logística e floresta.</li>
+        <li><b>Resultados</b> — matriz, ROC e a tabela do metrics.csv.</li>
+        <li><b>Discussão</b> — Moçambique, corte 0,5, licença, sem produção.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Regras que o texto obedece</h3>
+      <ul>
+        <li>Não publicar imagem do dataset. Só tabela, métrica e gráfico nosso.</li>
+        <li>Citar Microblink Fraud Lab e o FREUID Challenge 2026.</li>
+        <li>Uso acadêmico. O modelo não entra em sistema de órgão.</li>
+        <li>O link do template fica no rodapé deste slide.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>overleaf.com/latex/templates/ieee-journal-paper-template</span><b class="pg"></b></div>
+</section>
+
+<section class="slide">
+  <p class="kicker">Conclusão</p>
+  <h1>Três frases que os números aguentam</h1>
+  <div class="body" style="display:grid;gap:12px">
+    <div class="card"><h3>1. O dataset serve.</h3><p>Tem X, tem Y e o problema é de gestão pública. 57,7% legítimo e 42,3% fraude, sem pessoa real.</p></div>
+    <div class="card"><h3>2. No Egito, os dois modelos passam do chute.</h3><p>AUC 0,89 na logística e 0,81 na floresta. A logística deixa passar menos fraude. A floresta gera menos alarme falso.</p></div>
+    <div class="card"><h3>3. Um país novo derruba o resultado.</h3><p>Em Moçambique a acurácia vai a 0,51. Cor e borda aprenderam os documentos do treino. O artigo precisa dizer isso com essa clareza.</p></div>
+  </div>
+  <div class="take">A IA filtra o risco. O servidor decide. Microblink Fraud Lab, The FREUID Challenge 2026 – IJCAI-ECAI, Kaggle, 2026.</div>
+  <div class="foot"><span>João, Tiago e Micaela · UFG / IIG</span><b class="pg"></b></div>
+</section>
+
+</div>
+<p class="hint">setas ou espaço · F tela cheia</p>
+<script>
+const slides = [...document.querySelectorAll(".slide")];
+slides.forEach((sl, i) => {
+  const pg = sl.querySelector(".pg");
+  if (pg) pg.textContent = (i + 1) + " / " + slides.length;
+});
+let cur = 0;
+function show(k) {
+  slides[cur].classList.remove("active");
+  cur = Math.max(0, Math.min(slides.length - 1, k));
+  slides[cur].classList.add("active");
+}
+slides[0].classList.add("active");
+addEventListener("keydown", e => {
+  if (["ArrowRight", " ", "PageDown", "Enter"].includes(e.key)) { e.preventDefault(); show(cur + 1); }
+  if (["ArrowLeft", "PageUp", "Backspace"].includes(e.key)) { e.preventDefault(); show(cur - 1); }
+  if (e.key === "Home") show(0);
+  if (e.key === "End") show(slides.length - 1);
+  if (e.key === "f" || e.key === "F") {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+    else document.exitFullscreen?.();
+  }
+});
+document.addEventListener("click", e => {
+  if (e.target.closest("a")) return;
+  show(cur + (e.clientX > innerWidth / 2 ? 1 : -1));
+});
+function fit() {
+  const s = Math.min(innerWidth / 1280, innerHeight / 720) * 0.98;
+  document.getElementById("deck").style.transform = `scale(${s})`;
+}
+addEventListener("resize", fit);
+fit();
+</script>
+</body>
+</html>

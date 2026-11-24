@@ -11,6 +11,7 @@ access_token
 
 # Dataset FREUID: não versionar (licença Microblink)
 freuid-trabalho/data/
+dataset_completo/
 
 # Slides das aulas (material do professor)
 *.pdf

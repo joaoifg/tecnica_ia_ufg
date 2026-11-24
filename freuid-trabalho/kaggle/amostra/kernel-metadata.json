@@ -1,0 +1,3 @@
+{"id": "joaohenriquecfo/freuid-amostra-960", "title": "FREUID amostra 960", "code_file": "freuid_amostra.py",
+ "language": "python", "kernel_type": "script", "is_private": true, "enable_gpu": false, "enable_internet": false,
+ "competition_sources": ["the-freuid-challenge-2026-ijcai-ecai"], "dataset_sources": [], "kernel_sources": []}

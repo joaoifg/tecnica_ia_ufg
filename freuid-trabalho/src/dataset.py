@@ -22,6 +22,6 @@ def load_manifest(only_existing: bool = True) -> pd.DataFrame:
     path = SUBSET_MANIFEST if SUBSET_MANIFEST.exists() else DATA / "train_labels.csv"
     df = pd.read_csv(path)
     if only_existing:
-        mask = df["image_path"].map(lambda p: local_image_path(p).exists())
+        mask = df["image_path"].map(lambda p: local_image_path(p).is_file() and local_image_path(p).stat().st_size > 0)
         df = df[mask].reset_index(drop=True)
     return df
