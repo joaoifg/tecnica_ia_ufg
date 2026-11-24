@@ -81,7 +81,7 @@ def criar_modelos() -> dict:
         "Naive Bayes": escala(GaussianNB()),
         "Árvore de decisão": DecisionTreeClassifier(max_depth=8, min_samples_leaf=5,
                                                     class_weight="balanced", random_state=RANDOM_SEED),
-        "Random Forest": RandomForestClassifier(n_estimators=400, min_samples_leaf=2, n_jobs=-1,
+        "Random Forest": RandomForestClassifier(n_estimators=400, min_samples_leaf=2, n_jobs=1,
                                                 class_weight="balanced_subsample", random_state=RANDOM_SEED),
         "Gradient Boosting": HistGradientBoostingClassifier(max_iter=300, learning_rate=0.05,
                                                             class_weight="balanced", random_state=RANDOM_SEED),
@@ -241,7 +241,7 @@ def exp_hiperparametros(X, y, grupos, out):
     ]
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_SEED)
     for ax, (nome, est, param, grade, rotulo, log) in zip(axes, curvas):
-        tr, va = validation_curve(est, X, y, param_name=param, param_range=grade, cv=cv, scoring="roc_auc", n_jobs=-1)
+        tr, va = validation_curve(est, X, y, param_name=param, param_range=grade, cv=cv, scoring="roc_auc", n_jobs=1)
         ax.plot(grade, tr.mean(1), "o-", color=COR["azul"], label="treino")
         ax.plot(grade, va.mean(1), "o-", color=COR["laranja"], label="validação")
         ax.fill_between(grade, va.mean(1) - va.std(1), va.mean(1) + va.std(1), color=COR["laranja"], alpha=0.15)
@@ -262,7 +262,7 @@ def exp_hiperparametros(X, y, grupos, out):
     # GridSearch da Random Forest usando 'documento nunca visto' como validação
     grade_rf = {"max_depth": [6, 12, None], "min_samples_leaf": [1, 3, 8], "max_features": ["sqrt", 0.5]}
     gs = GridSearchCV(RandomForestClassifier(n_estimators=250, class_weight="balanced_subsample",
-                                             random_state=RANDOM_SEED, n_jobs=-1),
+                                             random_state=RANDOM_SEED, n_jobs=1),
                       grade_rf, cv=logo, scoring="roc_auc", n_jobs=1)
     gs.fit(X, y, groups=grupos)
     res["grid_rf"] = {"melhores": {k: (v if v is not None else "None") for k, v in gs.best_params_.items()},
@@ -278,7 +278,7 @@ def exp_aprendizado(X, y, modelos, out):
     res = {}
     fig, ax = plt.subplots(figsize=(8, 4.2))
     for nome in ("Regressão logística", "Random Forest", "Gradient Boosting"):
-        n, tr, va = learning_curve(modelos[nome], X, y, train_sizes=tamanhos, cv=cv, scoring="roc_auc", n_jobs=-1,
+        n, tr, va = learning_curve(modelos[nome], X, y, train_sizes=tamanhos, cv=cv, scoring="roc_auc", n_jobs=1,
                                    shuffle=True, random_state=RANDOM_SEED)
         ax.plot(n, va.mean(1), "o-", color=COR_MODELO[nome], lw=2.2, label=f"{nome} (validação)")
         ax.plot(n, tr.mean(1), ":", color=COR_MODELO[nome], lw=1.5)
@@ -448,7 +448,7 @@ def _importancia(final, X, y, tr, te, nome_final, out):
     # importância por permutação (na validação ID)
     mod_final = clone(final).fit(X[tr], y[tr])
     pi = permutation_importance(mod_final, X[te], y[te], scoring="roc_auc", n_repeats=10,
-                                random_state=RANDOM_SEED, n_jobs=-1)
+                                random_state=RANDOM_SEED, n_jobs=1)
     imp = pd.DataFrame({"feature": FEATURES, "familia": [familia(f) for f in FEATURES],
                         "queda_auc": pi.importances_mean, "desvio": pi.importances_std})
     imp = imp.sort_values("queda_auc", ascending=False)
@@ -522,7 +522,7 @@ def exp_atalhos(tab, X, y, tr, te_id, te_ood, out):
     res["so_tipo_auc_id"] = float(roc_auc_score(y[te_id], mod.predict_proba(tipos[te_id])[:, 1]))
     # (c) as 73 features conseguem dizer QUAL é o documento? (acurácia em 5 folds, universo inteiro)
     cv = StratifiedKFold(5, shuffle=True, random_state=RANDOM_SEED)
-    acc_tipo = cross_validate(RandomForestClassifier(n_estimators=300, random_state=RANDOM_SEED, n_jobs=-1),
+    acc_tipo = cross_validate(RandomForestClassifier(n_estimators=300, random_state=RANDOM_SEED, n_jobs=1),
                               X, tab["type"].to_numpy(), cv=cv, scoring="accuracy")["test_score"]
     res["acuracia_prever_tipo_pelas_features"] = {"media": float(acc_tipo.mean()), "chance": float(
         tab["type"].value_counts(normalize=True).max())}

@@ -6,12 +6,11 @@ Trabalho de **Técnicas de IA I** (UFG / IIG) — classificação binária legí
 
 | Etapa | Situação |
 |---|---|
-| EDA dos rótulos | OK → `reports/eda.md` |
-| Subset local (~544 imgs no E:) | OK |
-| Baselines RL + RF | OK → `reports/results.md` |
+| EDA dos 69.352 rótulos e da amostra de 464 imagens | OK → `reports/analise/eda.json` |
+| Treino clássico (7 modelos, ID e OOD) | OK → `reports/results.md` |
+| Artigo | OK → `reports/artigo_FREUID.md` |
 | Slides da apresentação | OK → `reports/apresentacao_FREUID.html` |
-| Rascunho do artigo | OK → `reports/artigo_rascunho_FREUID.md` |
-| CNN EfficientNet (Kaggle) | Pendente — subir o notebook |
+| CNN EfficientNet (Kaggle) | Código em `src/cnn.py`; não executada neste ambiente |
 
 ## Estrutura
 
@@ -29,8 +28,9 @@ freuid-trabalho/
 cd freuid-trabalho
 .\.venv\Scripts\Activate.ps1
 python src\eda.py
-python src\download.py    # subset estratificado (retomável)
-python src\train.py       # RL + RF → reports/
+python src\download.py       # subset estratificado (retomável)
+python src\eda_completa.py   # estudo dos rótulos e da amostra local
+python src\modelagem.py      # treino clássico → reports/analise e reports/figs
 ```
 
 Abrir slides: `reports/apresentacao_FREUID.html` (setas / espaço).

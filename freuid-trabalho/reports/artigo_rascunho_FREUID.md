@@ -4,7 +4,7 @@
 **Curso:** Bacharelado em IA Aplicada à Gestão Pública — UFG / IIG  
 **Disciplina:** Técnicas de IA I  
 
-> Rascunho vivo: preencher números finais em *Resultados* após o treino local e o notebook Kaggle.
+> Versão substituída. Os números finais e a discussão estão em `artigo_FREUID.md`. Este arquivo guarda o plano anterior e não deve ser citado como resultado.
 
 ## Resumo
 A validação de documentos de identidade é etapa crítica em cadastros públicos (conselhos profissionais, benefícios, concursos). Ataques modernos combinam manipulação física, edição por IA generativa e recaptura (*print-and-capture*). Este trabalho formula o problema como classificação binária supervisionada `D = {(x, y)}`, utilizando o dataset sintético da competição FREUID Challenge 2026 (IJCAI-ECAI / Microblink). Comparam-se regressão logística, Random Forest e uma CNN com *transfer learning* (EfficientNet-B0). A avaliação prioriza ROC-AUC e APCER a 1% de BPCER, refletindo o custo assimétrico de aceitar fraude versus rejeitar cidadão legítimo. No subset local (544 imagens, features clássicas), a regressão logística alcançou ROC-AUC **0,89** em tipos vistos; em tipo deixado de fora (OOD) o desempenho caiu (~0,69), evidenciando o desafio de generalização. O modelo é proposto como apoio à decisão humana, sob licença acadêmica não comercial.
